@@ -1,0 +1,13 @@
+{
+  "name": "rotted-script",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:sample1": "node src/index.js sample/sample1.rots"
+  },
+  "author": "",
+  "type": "module",
+  "license": "MIT"
+}

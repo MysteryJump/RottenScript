@@ -1,0 +1,21 @@
+
+[EntryPoint] // Build-in attribute for program entry point
+const main = () => {
+    console.log("Hello, world!");
+};
+
+// const AddFunction = (a: number, b: number): number => {
+//     a + b
+// };
+// 
+// const FizzBuzz = (target: number) => {
+//     for i in 0..target {
+//         match i {
+//             i % 15 == 0 => console.log("FizzBuzz "),
+//             i % 5 == 0 => console.log("Buzz "),
+//             i % 3 == 0 => console.log("Fizz "),
+//             _ => console.log(i + " ")
+//         };
+//     };
+// };
+// 
