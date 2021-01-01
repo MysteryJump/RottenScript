@@ -11,7 +11,7 @@ edition = "2018"
 
 [workspace]
 members = [
-    "rotted-script-core",
-    "rotted-script-rs",
-    "rotted-script-wasm"
+    "rotten-script-core",
+    "rotten-script-rs",
+    "rotten-script-wasm"
 ]

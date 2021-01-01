@@ -1,6 +1,6 @@
-# RottedScript
+# RottenScript
 
-RottedScript is a language inspired by Rust and TypeScript
+RottenScript is a language inspired by Rust and TypeScript
 
 ## Goals
 
@@ -8,3 +8,5 @@ RottedScript is a language inspired by Rust and TypeScript
 - Fully compatible with type system of TypeScript (support .d.ts)
 - Fully transpiling to JavaScript (Web, Node.js, Deno)
 - JSX support
+- Expression-oriented language
+

@@ -1,4 +1,4 @@
-import wasm from "../../pkg/rotted_script_wasm.js"
+import wasm from "../../pkg/rotten_script_wasm.js"
 import fs from "fs";
 
 const helpText = "Usage: npm start -- [filename]";

@@ -1,6 +1,6 @@
 use std::fs;
 
-use rotted_script_core::{
+use rotten_script_core::{
     builder::Builder,
     lexer::Lexer,
     parser::{token_stack::TokenStack, Parser},

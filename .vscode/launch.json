@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'rotted-script-rs'",
+            "name": "Debug executable 'rotten-script-rs'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=rotted-script-rs",
-                    "--package=rotted-script-rs"
+                    "--bin=rotten-script-rs",
+                    "--package=rotten-script-rs"
                 ],
                 "filter": {
-                    "name": "rotted-script-rs",
+                    "name": "rotten-script-rs",
                     "kind": "bin"
                 }
             },
@@ -28,16 +28,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'rotted-script-rs'",
+            "name": "Debug unit tests in executable 'rotten-script-rs'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=rotted-script-rs",
-                    "--package=rotted-script-rs"
+                    "--bin=rotten-script-rs",
+                    "--package=rotten-script-rs"
                 ],
                 "filter": {
-                    "name": "rotted-script-rs",
+                    "name": "rotten-script-rs",
                     "kind": "bin"
                 }
             },

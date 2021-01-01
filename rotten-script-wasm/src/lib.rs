@@ -1,6 +1,6 @@
 mod utils;
 
-use rotted_script_core::{
+use rotten_script_core::{
     builder::Builder,
     parser::{token_stack::TokenStack, Parser},
 };
@@ -20,7 +20,7 @@ extern "C" {
 
 #[wasm_bindgen]
 pub fn process(file_str: &str) {
-    let mut lexer = rotted_script_core::lexer::Lexer::new(file_str, &log);
+    let mut lexer = rotten_script_core::lexer::Lexer::new(file_str, &log);
     if lexer.lex().is_err() {
         log("some err");
     }

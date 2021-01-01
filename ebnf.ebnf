@@ -5,7 +5,7 @@ let_declaration ::= "let" declaration_body;
 declaration_body ::= identifier "=" expression ";";
 expression ::= literal | call_expression | function_expression;
 call_expression ::= identifier ("." identifier)* args;
-args = "(" (expression ",")* expression? ")";
+args ::= "(" (expression ",")* expression? ")";
 function_expression ::= "(" ")" "=>" compound_expression;
 expression_statement ::= expression";";
 compound_expression ::= "{" (expression_statement)* (expression)? "}";
