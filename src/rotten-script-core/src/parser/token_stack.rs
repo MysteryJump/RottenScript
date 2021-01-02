@@ -46,7 +46,7 @@ impl<'a> TokenStack<'a> {
     pub fn ind(&self) -> i32 {
         self.index
     }
-    pub fn peak(&self) -> Option<Token> {
+    pub fn peek(&self) -> Option<Token> {
         self.current.clone()
     }
 

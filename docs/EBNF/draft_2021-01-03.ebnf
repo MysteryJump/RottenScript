@@ -1,5 +1,5 @@
-(* Draft v0.0.1-20210102 *)
-TranslationUnit =  { { Attribute } , ConstDeclaration };
+(* Draft v0.0.1-20210103 *)
+TranslationUnit = { ImportDeclaration } , { { Attribute } , [ "export" , ["default"] ] , ConstDeclaration };
 Attribute = "[" , Identifier , "]";
 ConstDeclaration = "const" , DeclarationBody;
 LetDeclaration = "let" , DeclarationBody;
@@ -11,3 +11,6 @@ FunctionExpression = "(" , ")" , "=>" , CompoundExpression;
 ExpressionStatement = Expression , ";";
 CompoundExpression = "{" , { ExpressionStatement } , [ Expression ] , "}";
 Literal = Number | DoubleQuotesString | SingleQuotesString;
+NamedImportDeclaration = "import" , "{" , Identifier , { "," , Identifier } , "}" , "from" (DoubleQuotesString | SingleQuotesString);
+DefaultImportDeclaration = "import" Identifier "from" (DoubleQuotesString | SingleQuotesString);
+ImportDeclaration = NamedImportDeclaration | DefaultImportDeclaration;

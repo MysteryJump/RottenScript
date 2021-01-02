@@ -1,4 +1,4 @@
-use std::{todo, vec};
+use std::vec;
 
 use non_terminal::NonTerminal;
 use parse_error::ParseError;
@@ -38,6 +38,10 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_translation_unit(&mut self) -> Result<(), ParseError> {
+        while let Some(Token::Reserved(ReservedWord::Import)) = self.tokens.look_ahead(1) {
+            let import = self.parse_import_declaration()?;
+            self.ast.add_child(import);
+        }
         while self.tokens.has_next() {
             if let Some(Token::Reserved(r)) = self.tokens.look_ahead(1) {
                 let child = match r {
@@ -91,7 +95,11 @@ impl<'a> Parser<'a> {
     }
     #[allow(dead_code)]
     fn parse_let_declaration(&mut self) -> Result<Ast, ParseError> {
-        todo!()
+        self.tokens.next();
+        Ok(Ast::new_node_with_leaves(
+            NonTerminal::LetDeclaration,
+            vec![self.parse_declaration_body()?],
+        ))
     }
     fn parse_declaration_body(&mut self) -> Result<Ast, ParseError> {
         let ident_ast = if let Some(Token::Identifier(_)) = self.tokens.look_ahead(1) {
@@ -99,7 +107,7 @@ impl<'a> Parser<'a> {
         } else {
             return Err(ParseError::new("unexpected token or eof"));
         };
-        self.tokens.consume_reserved(ReservedWord::Equal)?;
+        self.tokens.consume_reserved(ReservedWord::Assign)?;
         let expr_ast = self.parse_expression()?;
         if let Some(Token::Reserved(ReservedWord::SemiColon)) = self.tokens.next() {
             Ok(Ast::new_node_with_leaves(
@@ -237,5 +245,86 @@ impl<'a> Parser<'a> {
             NonTerminal::CompoundExpression,
             expressions,
         ))
+    }
+
+    fn parse_named_import_declaration(&mut self) -> Result<Ast, ParseError> {
+        self.tokens.next();
+        self.tokens.consume_reserved(ReservedWord::LeftCurly)?;
+        let mut asts = Vec::new();
+        loop {
+            if let Some(s) = self.tokens.look_ahead(1) {
+                match s {
+                    Token::Identifier(_) => {
+                        asts.push(Ast::new_leaf(self.tokens.next().unwrap()));
+                        match self.tokens.look_ahead(1) {
+                            Some(Token::Reserved(r)) => match r {
+                                ReservedWord::Comma => {
+                                    self.tokens.next();
+                                }
+                                ReservedWord::RightCurly => {
+                                    self.tokens.next();
+                                    break;
+                                }
+                                _ => return Err(ParseError::new("unexpected token")),
+                            },
+                            Some(_) | None => {
+                                return Err(ParseError::new("unexpected eof or token"))
+                            }
+                        }
+                    }
+                    _ => return Err(ParseError::new("unexpected token")),
+                }
+            } else {
+                return Err(ParseError::new("unexpected eof"));
+            }
+        }
+        self.tokens.consume_reserved(ReservedWord::From)?;
+        if let Some(Token::String(s)) = self.tokens.next() {
+            asts.push(Ast::new_leaf(Token::String(s)));
+            Ok(Ast::new_node_with_leaves(
+                NonTerminal::NamedImportDeclaration,
+                asts,
+            ))
+        } else {
+            Err(ParseError::new("unexpected token or eof"))
+        }
+    }
+
+    fn parse_default_import_declaration(&mut self) -> Result<Ast, ParseError> {
+        self.tokens.next();
+        let mut asts = Vec::new();
+        if let Some(Token::Identifier(ident)) = self.tokens.next() {
+            asts.push(Ast::new_leaf(Token::Identifier(ident)));
+        } else {
+            return Err(ParseError::new("unexpected token or eof"));
+        }
+        self.tokens.consume_reserved(ReservedWord::From)?;
+        if let Some(Token::String(s)) = self.tokens.next() {
+            asts.push(Ast::new_leaf(Token::String(s)));
+            Ok(Ast::new_node_with_leaves(
+                NonTerminal::DefaultImportDeclaration,
+                asts,
+            ))
+        } else {
+            Err(ParseError::new("unexpected token or eof"))
+        }
+    }
+
+    fn parse_import_declaration(&mut self) -> Result<Ast, ParseError> {
+        if let Some(next) = self.tokens.look_ahead(2) {
+            match next {
+                Token::Reserved(ReservedWord::LeftCurly) => Ok(Ast::new_node_with_leaves(
+                    NonTerminal::ImportDeclaration,
+                    vec![self.parse_named_import_declaration()?],
+                )),
+                Token::Identifier(_) => Ok(Ast::new_node_with_leaves(
+                    NonTerminal::ImportDeclaration,
+                    vec![self.parse_default_import_declaration()?],
+                )),
+                _ => Err(ParseError::new("unexpected token")),
+            }
+        } else {
+            Err(ParseError::new("unexpected eof"))
+        }
     }
 }

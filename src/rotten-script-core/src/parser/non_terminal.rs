@@ -11,4 +11,7 @@ pub enum NonTerminal {
     CompoundExpression,
     Args,
     ExpressionStatement,
+    NamedImportDeclaration,
+    DefaultImportDeclaration,
+    ImportDeclaration,
 }
