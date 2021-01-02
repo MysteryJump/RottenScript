@@ -1,18 +1,22 @@
 use crate::{
     lexer::{reserved_word::ReservedWord, token::Token},
     parser::{ast::Ast, ast_type::AstType, non_terminal::NonTerminal},
+    semantic_analyzer::{self, semantic_tree::SemanticTree},
 };
 
 pub struct Builder<'a> {
     ast: &'a Ast,
+    semantic_tree: SemanticTree<'a>,
     result: String,
 }
 
 // TODO: unparse using semantic-analyzed tree
 impl Builder<'_> {
     pub fn new(ast: &Ast) -> Builder {
+        let tree = semantic_analyzer::analyze(vec![(String::from("sample.rots"), ast)]);
         Builder {
             ast,
+            semantic_tree: tree,
             result: String::new(),
         }
     }
@@ -25,8 +29,12 @@ impl Builder<'_> {
             });
         }
 
+        let entry = self.semantic_tree.get_entrypoint_func_name();
         // NOTE: temporary
-        self.result.push_str("\n\nmain();\n");
+        if entry.is_some() {
+            self.result
+                .push_str(&format!("\n\n{}();\n", entry.unwrap()));
+        }
     }
 
     fn unparse_rec(&mut self, ast: &Ast, depth: u32) {

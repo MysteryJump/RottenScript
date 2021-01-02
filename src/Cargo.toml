@@ -1,5 +1,5 @@
 [package]
-name = "rotted-script"
+name = "rotten-script"
 version = "0.1.0"
 authors = ["Yukio Tanaka"]
 edition = "2018"

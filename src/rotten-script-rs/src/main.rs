@@ -8,7 +8,7 @@ use rotten_script_core::{
 
 fn main() {
     let content =
-        fs::read_to_string("rotted-script-wasm/node-project/sample/sample1.rots").unwrap();
+        fs::read_to_string("rotten-script-wasm/node-project/sample/sample1.rots").unwrap();
     let mut lexer = Lexer::new(&content, &logger);
     lexer.lex().unwrap();
     let token_stack = &mut TokenStack::new(&lexer.tokens);

@@ -1,0 +1,11 @@
+TranslationUnit =  { { Attribute } , ConstDeclaration };
+Attribute = "[" , Identifier , "]";
+ConstDeclaration = "const" , DeclarationBody;
+LetDeclaration = "let" , DeclarationBody;
+DeclarationBody = Identifier , "=" , Expression , ";";
+Expression = Literal | CallExpression | FunctionExpression;
+CallExpression = Identifier , { "." Identifier } Args;
+Args = "(" , [ { Expression , "," } , Expression ] ")";
+FunctionExpression = "(" , ")" , "=>" , CompoundExpression;
+ExpressionStatement = Expression , ";";
+CompoundExpression = "{" , { ExpressionStatement } , [ Expression ] , "}";

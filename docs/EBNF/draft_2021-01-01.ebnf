@@ -7,5 +7,5 @@ expression ::= literal | call_expression | function_expression;
 call_expression ::= identifier ("." identifier)* args;
 args ::= "(" (expression ",")* expression? ")";
 function_expression ::= "(" ")" "=>" compound_expression;
-expression_statement ::= expression";";
+expression_statement ::= expression ";";
 compound_expression ::= "{" (expression_statement)* (expression)? "}";

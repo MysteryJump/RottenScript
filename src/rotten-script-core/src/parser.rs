@@ -9,7 +9,7 @@ use crate::lexer::{reserved_word::ReservedWord, token::Token};
 use self::ast::Ast;
 
 pub mod ast;
-pub(crate) mod ast_type;
+pub mod ast_type;
 pub(crate) mod non_terminal;
 mod parse_error;
 pub mod token_stack;
@@ -39,17 +39,30 @@ impl<'a> Parser<'a> {
 
     fn parse_translation_unit(&mut self) -> Result<(), ParseError> {
         while self.tokens.has_next() {
-            if let Token::Reserved(r) = self.tokens.look_ahead(1).unwrap() {
+            if let Some(Token::Reserved(r)) = self.tokens.look_ahead(1) {
                 let child = match r {
-                    ReservedWord::LeftSquareBracket => self.parse_attribute()?,
+                    ReservedWord::LeftSquareBracket => {
+                        while Some(Token::Reserved(ReservedWord::LeftSquareBracket))
+                            == self.tokens.look_ahead(1)
+                        {
+                            let child = self.parse_attribute()?;
+                            self.ast.add_child(child);
+                        }
+                        if Some(Token::Reserved(ReservedWord::Const)) == self.tokens.look_ahead(1) {
+                            self.parse_const_declaration()?
+                        } else {
+                            return Err(ParseError::new("unexpected eof or token"));
+                        }
+                    }
                     ReservedWord::Const => self.parse_const_declaration()?,
                     _ => return Err(ParseError::new("unexpected token")),
                 };
                 self.ast.add_child(child);
             } else {
-                return Err(ParseError::new("unexpected token"));
+                return Err(ParseError::new("unexpected eof"));
             }
         }
+
         Ok(())
     }
 
@@ -138,36 +151,40 @@ impl<'a> Parser<'a> {
             .consume_reserved(ReservedWord::LeftParenthesis)?;
         let mut callers = Vec::new();
 
-        loop {
-            if let Some(tk) = self.tokens.look_ahead(1) {
-                match tk {
-                    Token::String(_)
-                    | Token::Number(_)
-                    | Token::Identifier(_)
-                    | Token::Reserved(ReservedWord::LeftParenthesis) => {
-                        callers.push(self.parse_expression()?);
-                    }
-                    _ => return Err(ParseError::new("unexpected token")),
-                }
+        if self.tokens.look_ahead(1) == Some(Token::Reserved(ReservedWord::RightParenthesis)) {
+            Ok(Ast::new_node_with_leaves(NonTerminal::Args, Vec::new()))
+        } else {
+            loop {
                 if let Some(tk) = self.tokens.look_ahead(1) {
                     match tk {
-                        Token::Reserved(ReservedWord::Comma) => {
-                            self.tokens.next();
-                        }
-                        Token::Reserved(ReservedWord::RightParenthesis) => {
-                            self.tokens.next();
-                            break;
+                        Token::String(_)
+                        | Token::Number(_)
+                        | Token::Identifier(_)
+                        | Token::Reserved(ReservedWord::LeftParenthesis) => {
+                            callers.push(self.parse_expression()?);
                         }
                         _ => return Err(ParseError::new("unexpected token")),
                     }
+                    if let Some(tk) = self.tokens.look_ahead(1) {
+                        match tk {
+                            Token::Reserved(ReservedWord::Comma) => {
+                                self.tokens.next();
+                            }
+                            Token::Reserved(ReservedWord::RightParenthesis) => {
+                                self.tokens.next();
+                                break;
+                            }
+                            _ => return Err(ParseError::new("unexpected token")),
+                        }
+                    } else {
+                        return Err(ParseError::new("unexpected eof"));
+                    };
                 } else {
                     return Err(ParseError::new("unexpected eof"));
-                };
-            } else {
-                return Err(ParseError::new("unexpected eof"));
+                }
             }
+            Ok(Ast::new_node_with_leaves(NonTerminal::Args, callers))
         }
-        Ok(Ast::new_node_with_leaves(NonTerminal::Args, callers))
     }
     fn parse_function_expression(&mut self) -> Result<Ast, ParseError> {
         self.tokens
