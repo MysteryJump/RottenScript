@@ -112,6 +112,23 @@ impl Builder<'_> {
                     self.result.push(';');
                     self.add_lf_with_depth_space(depth);
                 }
+                NonTerminal::ExportableConstDeclaration => {
+                    let ast_len = ast.children.as_ref().unwrap().len();
+                    match ast_len {
+                        1 => {
+                            self.unparse_rec(&ast.children.as_ref().unwrap()[0], depth);
+                        }
+                        2 => {
+                            self.result.push_str("export ");
+                            self.unparse_rec(&ast.children.as_ref().unwrap()[1], depth);
+                        }
+                        3 => {
+                            self.result.push_str("export const ");
+                            self.unparse_rec(&ast.children.as_ref().unwrap()[2], depth);
+                        }
+                        _ => panic!(),
+                    }
+                }
                 _ => {}
             }
         } else {

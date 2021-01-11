@@ -39,6 +39,7 @@ impl<'a> Parser<'a> {
         self.parse_translation_unit()
     }
 
+    // TranslationUnit = { ImportDeclaration } , { { Attribute } , ExportableConstDeclaration };
     fn parse_translation_unit(&mut self) -> Result<(), ParseError> {
         while let Some(Token::Reserved(ReservedWord::Import)) = self.tokens.look_ahead(1) {
             let import = self.parse_import_declaration()?;
@@ -55,12 +56,12 @@ impl<'a> Parser<'a> {
                             self.ast.add_child(child);
                         }
                         if Some(Token::Reserved(ReservedWord::Const)) == self.tokens.look_ahead(1) {
-                            self.parse_const_declaration()?
+                            self.parse_exportable_const_declaration()?
                         } else {
                             return Err(ParseError::new("unexpected eof or token"));
                         }
                     }
-                    ReservedWord::Const => self.parse_const_declaration()?,
+                    ReservedWord::Const => self.parse_exportable_const_declaration()?,
                     _ => return Err(ParseError::new("unexpected token")),
                 };
                 self.ast.add_child(child);
@@ -86,6 +87,46 @@ impl<'a> Parser<'a> {
             return Err(ParseError::new("unexpected token or eof"));
         }
         Ok(ast)
+    }
+
+    // ExportableConstDeclaration = [ "export" , ["default"] ] , ConstDeclaration;
+    fn parse_exportable_const_declaration(&mut self) -> Result<Ast, ParseError> {
+        let mut ast = Vec::new();
+        match self.tokens.look_ahead(1) {
+            Some(Token::Reserved(r)) => match r {
+                ReservedWord::Export => {
+                    ast.push(Ast::new_leaf(Token::Reserved(ReservedWord::Export)));
+                    self.tokens.next();
+                    if let Some(Token::Reserved(tk)) = self.tokens.look_ahead(1) {
+                        match tk {
+                            ReservedWord::Default => {
+                                ast.push(Ast::new_leaf(Token::Reserved(ReservedWord::Default)));
+                                self.tokens.next();
+                                self.tokens.scan_reserved(ReservedWord::Const)?;
+                                ast.push(self.parse_const_declaration()?);
+                            }
+                            ReservedWord::Const => {
+                                ast.push(self.parse_const_declaration()?);
+                            }
+                            _ => return Err(ParseError::new("unexpected token")),
+                        }
+                    } else {
+                        return Err(ParseError::new("unexpected eof or token"));
+                    }
+                }
+                ReservedWord::Const => {
+                    ast.push(self.parse_const_declaration()?);
+                }
+                _ => return Err(ParseError::new("unexpected token")),
+            },
+            Some(_) | None => {
+                return Err(ParseError::new("unexpected eof or token"));
+            }
+        }
+        Ok(Ast::new_node_with_leaves(
+            NonTerminal::ExportableConstDeclaration,
+            ast,
+        ))
     }
 
     fn parse_const_declaration(&mut self) -> Result<Ast, ParseError> {

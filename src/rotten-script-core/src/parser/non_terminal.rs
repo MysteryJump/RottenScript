@@ -2,6 +2,7 @@
 pub enum NonTerminal {
     TranslationUnit,
     Attribute,
+    ExportableConstDeclaration,
     ConstDeclaration,
     LetDeclaration,
     DeclarationBody,

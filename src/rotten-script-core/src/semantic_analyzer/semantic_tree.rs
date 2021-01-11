@@ -23,12 +23,18 @@ struct FuncInfo {
 }
 
 impl FuncInfo {
-    pub fn new(name: String, path: String, id: i32, attributes: Vec<String>) -> FuncInfo {
+    pub fn new(
+        name: String,
+        path: String,
+        id: i32,
+        attributes: Vec<String>,
+        exported_type: ExportedType,
+    ) -> FuncInfo {
         let is_entry = attributes.iter().any(|x| x == &String::from("EntryPoint"));
         FuncInfo {
             name,
             full_path: path,
-            exported_type: ExportedType::None,
+            exported_type,
             args: Arguments {
                 arguments: Vec::new(),
             },
@@ -40,10 +46,9 @@ impl FuncInfo {
     }
 }
 
-#[allow(dead_code)]
 enum ExportedType {
     Export,
-    // DefaultExport,
+    DefaultExport,
     None,
 }
 
@@ -105,8 +110,30 @@ impl SemanticTree<'_> {
                                 .to_string(),
                         );
                     }
-                    NonTerminal::ConstDeclaration => {
-                        let declar_body = &ast.children.as_ref().unwrap()[0];
+                    NonTerminal::ExportableConstDeclaration => {
+                        let has_export;
+                        let has_default;
+                        let ast_len = ast.children.as_ref().unwrap().len();
+                        if ast_len >= 2 {
+                            has_export = true;
+                            if ast_len == 3 {
+                                has_default = true;
+                            } else {
+                                has_default = false;
+                            }
+                        } else {
+                            has_export = false;
+                            has_default = false;
+                        }
+                        let const_declar_body = &ast.children.as_ref().unwrap()[if has_default {
+                            2
+                        } else if has_export {
+                            1
+                        } else {
+                            0
+                        }];
+
+                        let declar_body = &const_declar_body.children.as_ref().unwrap()[0];
                         let func_name = declar_body.children.as_ref().unwrap()[0]
                             .token
                             .as_ref()
@@ -117,6 +144,13 @@ impl SemanticTree<'_> {
                             path.to_string(),
                             count + self.func_id_count,
                             attributes.clone(),
+                            if has_default {
+                                ExportedType::DefaultExport
+                            } else if has_export {
+                                ExportedType::Export
+                            } else {
+                                ExportedType::None
+                            },
                         );
                         count += 1;
                         attributes.clear();
