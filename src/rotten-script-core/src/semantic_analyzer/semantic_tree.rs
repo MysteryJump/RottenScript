@@ -102,6 +102,7 @@ impl SemanticTree<'_> {
         for ast in translation_unit.children.as_ref().unwrap() {
             if let AstType::NonTerminal(nt) = &ast.ast_type {
                 match nt {
+                    NonTerminal::ImportDeclaration => {}
                     NonTerminal::Attribute => {
                         attributes.push(
                             ast.children.as_ref().unwrap()[0]

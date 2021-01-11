@@ -22,7 +22,7 @@ extern "C" {
 pub fn process(file_str: &str) {
     let mut lexer = rotten_script_core::lexer::Lexer::new(file_str, &log);
     if lexer.lex().is_err() {
-        log("some err");
+        log("some err from lexer");
     }
     let mut str3 = String::from("[");
     for item in &lexer.tokens {
@@ -33,7 +33,7 @@ pub fn process(file_str: &str) {
     let token_stack = &mut TokenStack::new(&lexer.tokens);
     let mut parser = Parser::new(token_stack, &log);
     if parser.parse().is_err() {
-        log("some err");
+        log("some err from parser");
     }
     let ast = parser.ast;
     let mut builder = Builder::new(&ast);

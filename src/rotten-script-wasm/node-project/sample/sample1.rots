@@ -1,3 +1,5 @@
+import sample2 from "./sample2/sample2";
+
 
 [EntryPoint] // Build-in attribute for program entry point
 const main = () => {

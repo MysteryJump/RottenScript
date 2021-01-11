@@ -1,0 +1,3 @@
+export default const ConsoleLog = () => {
+    console.log("Hello, log!");
+};

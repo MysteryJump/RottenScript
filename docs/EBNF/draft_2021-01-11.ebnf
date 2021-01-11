@@ -17,4 +17,4 @@ Literal = Number | DoubleQuotesString | SingleQuotesString;
 
 NamedImportDeclaration = "import" , "{" , Identifier , { "," , Identifier } , "}" , "from" (DoubleQuotesString | SingleQuotesString);
 DefaultImportDeclaration = "import" , Identifier , "from" , (DoubleQuotesString | SingleQuotesString);
-ImportDeclaration = NamedImportDeclaration | DefaultImportDeclaration;
+ImportDeclaration = (NamedImportDeclaration | DefaultImportDeclaration) , ";";

@@ -139,6 +139,28 @@ impl Builder<'_> {
                         _ => panic!(),
                     }
                 }
+                NonTerminal::ImportDeclaration => {
+                    self.unparse_rec(&ast.children.as_ref().unwrap()[0], depth);
+                    self.result.push(';');
+                    self.add_lf_with_depth_space(depth);
+                }
+                NonTerminal::DefaultImportDeclaration => {
+                    self.result.push_str("import ");
+                    self.unparse_rec(&ast.children.as_ref().unwrap()[0], depth);
+                    self.result.push_str(" from ");
+                    self.unparse_rec(&ast.children.as_ref().unwrap()[1], depth);
+                }
+                NonTerminal::NamedImportDeclaration => {
+                    self.result.push_str("import {");
+                    let len = ast.children.as_ref().unwrap().len();
+                    for i in 0..len - 1 {
+                        self.result.push(' ');
+                        self.unparse_rec(&ast.children.as_ref().unwrap()[i], depth);
+                        self.result.push(',');
+                    }
+                    self.result.push_str(" } from ");
+                    self.unparse_rec(&ast.children.as_ref().unwrap()[len - 1], depth);
+                }
                 _ => {}
             }
         } else {

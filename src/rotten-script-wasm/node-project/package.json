@@ -4,10 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "start:sample1": "node src/index.js sample/sample1.rots"
+    "start": "ts-node src/index.ts",
+    "start:sample1": "ts-node src/index.ts sample/sample1.rots"
   },
   "author": "",
-  "type": "module",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^14.14.20",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.3"
+  }
 }

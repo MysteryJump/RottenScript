@@ -67,9 +67,9 @@ impl<'a> Parser<'a> {
         }
     }
 
-    // ImportDeclaration = NamedImportDeclaration | DefaultImportDeclaration;
+    // ImportDeclaration = (NamedImportDeclaration | DefaultImportDeclaration) , ";";
     pub fn parse_import_declaration(&mut self) -> Result<Ast, ParseError> {
-        if let Some(next) = self.tokens.look_ahead(2) {
+        let result = if let Some(next) = self.tokens.look_ahead(2) {
             match next {
                 Token::Reserved(ReservedWord::LeftCurly) => Ok(Ast::new_node_with_leaves(
                     NonTerminal::ImportDeclaration,
@@ -83,7 +83,9 @@ impl<'a> Parser<'a> {
             }
         } else {
             Err(ParseError::new("unexpected eof"))
-        }
+        };
+        self.tokens.consume_reserved(ReservedWord::SemiColon)?;
+        result
     }
 }
 
