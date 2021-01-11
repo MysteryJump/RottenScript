@@ -8,6 +8,7 @@ pub struct Builder<'a> {
     ast: &'a Ast,
     semantic_tree: SemanticTree<'a>,
     result: String,
+    debug_mode: bool,
 }
 
 // TODO: unparse using semantic-analyzed tree
@@ -18,7 +19,12 @@ impl Builder<'_> {
             ast,
             semantic_tree: tree,
             result: String::new(),
+            debug_mode: false,
         }
+    }
+
+    pub fn set_debug_mode(&mut self) {
+        self.debug_mode = true;
     }
 
     pub fn unparse(&mut self) {
@@ -34,6 +40,10 @@ impl Builder<'_> {
         if entry.is_some() {
             self.result
                 .push_str(&format!("\n\n{}();\n", entry.unwrap()));
+        }
+
+        if self.debug_mode {
+            self.semantic_tree.print_semantic_tree();
         }
     }
 

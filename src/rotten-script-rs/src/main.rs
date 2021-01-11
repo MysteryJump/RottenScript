@@ -16,7 +16,9 @@ fn main() {
     parser.parse().unwrap();
     let ast = parser.ast;
     let mut builder = Builder::new(&ast);
+    builder.set_debug_mode();
     builder.unparse();
+    println!("// above output is for debug\n\n");
     println!("{}", builder.get_result());
 }
 

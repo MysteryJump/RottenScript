@@ -10,7 +10,7 @@ pub struct SemanticTree<'a> {
     func_id_count: i32,
 }
 
-#[allow(dead_code)]
+#[derive(Debug)]
 struct FuncInfo {
     name: String,
     full_path: String,
@@ -46,24 +46,25 @@ impl FuncInfo {
     }
 }
 
+#[derive(Debug)]
 enum ExportedType {
     Export,
     DefaultExport,
     None,
 }
 
-#[allow(dead_code)]
+#[derive(Debug)]
 struct Arguments {
     arguments: Vec<(String, Type)>,
 }
-
 #[allow(dead_code)]
+#[derive(Debug)]
 enum Type {
     Primitive(PrimitiveType),
     Object,
 }
-
 #[allow(dead_code)]
+#[derive(Debug)]
 enum PrimitiveType {
     Number,
     String,
@@ -179,5 +180,17 @@ impl SemanticTree<'_> {
             let value = &self.members[self.entry_point_id.as_ref().unwrap()];
             Some(value.name.clone())
         }
+    }
+
+    pub(crate) fn print_semantic_tree(&self) {
+        println!(
+            "entry point: {}",
+            if self.entry_point_id.is_some() {
+                &self.members[&self.entry_point_id.unwrap()].name
+            } else {
+                "[none]"
+            }
+        );
+        println!("members: \n{:?}", self.members);
     }
 }
