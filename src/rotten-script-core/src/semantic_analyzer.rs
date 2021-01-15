@@ -2,6 +2,7 @@ use semantic_tree::SemanticTree;
 
 use crate::parser::ast::Ast;
 
+mod member_map;
 pub(crate) mod semantic_tree;
 
 pub fn analyze(ast_list: Vec<(String, &'_ Ast)>) -> SemanticTree {

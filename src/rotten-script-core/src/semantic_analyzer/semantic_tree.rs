@@ -11,13 +11,13 @@ pub struct SemanticTree<'a> {
 }
 
 #[derive(Debug)]
-struct FuncInfo {
-    name: String,
-    full_path: String,
+pub struct FuncInfo {
+    pub name: String,
+    pub full_path: String,
     exported_type: ExportedType,
     args: Arguments,
     return_type: Type,
-    func_id: i32,
+    pub func_id: i32,
     is_entry: bool,
     attributes: Vec<String>,
 }
@@ -47,7 +47,7 @@ impl FuncInfo {
 }
 
 #[derive(Debug)]
-enum ExportedType {
+pub enum ExportedType {
     Export,
     DefaultExport,
     None,
