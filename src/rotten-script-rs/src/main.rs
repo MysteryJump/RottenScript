@@ -4,6 +4,7 @@ use rotten_script_core::{
     builder::Builder,
     lexer::Lexer,
     parser::{token_stack::TokenStack, Parser},
+    semantic_analyzer::analyze,
 };
 
 fn main() {
@@ -15,11 +16,13 @@ fn main() {
     let mut parser = Parser::new(token_stack, &logger);
     parser.parse().unwrap();
     let ast = parser.ast;
-    let mut builder = Builder::new(&ast);
-    builder.set_debug_mode();
-    builder.unparse();
-    println!("// above output is for debug\n\n");
-    println!("{}", builder.get_result());
+    let tree = analyze(vec![("sample1.rots".to_string(), &ast)]);
+    let result = tree.call_builder(false);
+
+    for item in result {
+        println!("// {}\n", item.0);
+        println!("{}\n", item.1);
+    }
 }
 
 fn logger(line: &str) {

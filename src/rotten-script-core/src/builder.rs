@@ -1,25 +1,37 @@
 use crate::{
     lexer::{reserved_word::ReservedWord, token::Token},
     parser::{ast::Ast, ast_type::AstType, non_terminal::NonTerminal},
-    semantic_analyzer::{self, semantic_tree::SemanticTree},
+    semantic_analyzer::semantic_tree::SemanticTree,
 };
 
 pub struct Builder<'a> {
     ast: &'a Ast,
-    semantic_tree: SemanticTree<'a>,
+    semantic_tree: &'a SemanticTree<'a>,
     result: String,
     debug_mode: bool,
+    file_name: Option<String>,
 }
 
 // TODO: unparse using semantic-analyzed tree
 impl Builder<'_> {
-    pub fn new(ast: &Ast) -> Builder {
-        let tree = semantic_analyzer::analyze(vec![(String::from("sample.rots"), ast)]);
+    // pub fn new(ast: &Ast) -> Builder {
+    //     let tree = semantic_analyzer::analyze(vec![(String::from("sample.rots"), ast)]);
+    //     Builder {
+    //         ast,
+    //         semantic_tree: &tree,
+    //         result: String::new(),
+    //         debug_mode: false,
+    //         file_name: None,
+    //     }
+    // }
+
+    pub fn new<'a>(tree: &'a SemanticTree<'a>, ast: &'a Ast, file_name: &str) -> Builder<'a> {
         Builder {
-            ast,
             semantic_tree: tree,
-            result: String::new(),
+            ast,
             debug_mode: false,
+            result: String::new(),
+            file_name: Some(file_name.to_string()),
         }
     }
 

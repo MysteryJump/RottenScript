@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::parser::{ast::Ast, ast_type::AstType, non_terminal::NonTerminal};
 #[allow(dead_code)]
 pub struct SemanticTree<'a> {
-    ast_list: Vec<(String, &'a Ast)>,
+    pub ast_list: Vec<(String, &'a Ast)>,
     ir_tree: String,
     members: HashMap<i32, FuncInfo>,
     entry_point_id: Option<i32>,
