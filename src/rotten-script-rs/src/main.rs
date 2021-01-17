@@ -1,7 +1,6 @@
 use std::fs;
 
 use rotten_script_core::{
-    builder::Builder,
     lexer::Lexer,
     parser::{token_stack::TokenStack, Parser},
     semantic_analyzer::analyze,

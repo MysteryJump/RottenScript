@@ -45,8 +45,8 @@ pub fn process(file_str: &str) {
     let result = tree.call_builder(false);
 
     for item in result {
-        println!("// {}\n", item.0);
-        println!("{}\n", item.1);
+        log(&format!("// {}\n", item.0));
+        log(&format!("{}\n", item.1));
     }
 }
 
