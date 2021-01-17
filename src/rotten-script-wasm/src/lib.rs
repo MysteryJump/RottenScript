@@ -1,7 +1,7 @@
 mod utils;
 
 use once_cell::sync::Lazy;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+// use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::{collections::HashMap, sync::Mutex};
 
 use rotten_script_core::{
@@ -42,7 +42,7 @@ pub fn process(file_str: &str) {
     }
     let ast = parser.ast;
     let tree = analyze(vec![("sample1.rots".to_string(), &ast)]);
-    let result = tree.call_builder(false);
+    let result = tree.call_builder(false, &log);
 
     for item in result {
         log(&format!("// {}\n", item.0));
@@ -54,7 +54,7 @@ pub fn process(file_str: &str) {
 pub fn execute_processing() {
     let files = &SOURCES.lock().unwrap().file_pairs;
     let asts = files
-        .par_iter()
+        .iter()
         .map(|x| {
             let mut lexer = Lexer::new(&x.1, &log);
             lexer.lex().unwrap();
@@ -65,7 +65,7 @@ pub fn execute_processing() {
         })
         .collect::<Vec<_>>();
     let tree = analyze(asts.iter().map(|x| (x.0.clone(), &x.1)).collect());
-    RESULTS.lock().unwrap().file_pairs = Some(tree.call_builder(false));
+    RESULTS.lock().unwrap().file_pairs = Some(tree.call_builder(false, &log));
 }
 
 #[wasm_bindgen]

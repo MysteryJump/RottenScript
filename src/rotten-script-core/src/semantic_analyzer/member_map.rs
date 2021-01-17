@@ -1,7 +1,6 @@
 use super::semantic_tree::FuncInfo;
-use std::{collections::HashMap, ops::Index};
-
-struct MemberMap {
+use std::{collections::HashMap, fmt::Debug, ops::Index};
+pub struct MemberMap {
     // key: func_id, value: FuncInfo
     members: HashMap<i32, FuncInfo>,
     // key: func_name(full), value: func_id
@@ -17,6 +16,7 @@ impl Index<&i32> for MemberMap {
     }
 }
 
+/// Index for func_full_path
 impl Index<&String> for MemberMap {
     type Output = FuncInfo;
 
@@ -26,15 +26,26 @@ impl Index<&String> for MemberMap {
     }
 }
 
-impl MemberMap {
-    pub fn new() -> MemberMap {
+impl Debug for MemberMap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.members.values()).finish()
+    }
+}
+
+impl Default for MemberMap {
+    fn default() -> Self {
         MemberMap {
             members: HashMap::new(),
             func_path_to_func_id_map: HashMap::new(),
             count: 0,
         }
     }
+}
 
+impl MemberMap {
+    pub fn new() -> MemberMap {
+        MemberMap::default()
+    }
     pub fn len(&self) -> usize {
         self.count
     }

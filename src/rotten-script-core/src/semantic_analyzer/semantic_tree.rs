@@ -1,11 +1,13 @@
-use std::collections::HashMap;
+use member_map::MemberMap;
 
 use crate::parser::{ast::Ast, ast_type::AstType, non_terminal::NonTerminal};
+
+use super::member_map;
 #[allow(dead_code)]
 pub struct SemanticTree<'a> {
     pub ast_list: Vec<(String, &'a Ast)>,
     ir_tree: String,
-    members: HashMap<i32, FuncInfo>,
+    pub members: MemberMap, //HashMap<i32, FuncInfo>,
     entry_point_id: Option<i32>,
     func_id_count: i32,
 }
@@ -14,6 +16,7 @@ pub struct SemanticTree<'a> {
 pub struct FuncInfo {
     pub name: String,
     pub full_path: String,
+    pub file_name: String,
     exported_type: ExportedType,
     args: Arguments,
     return_type: Type,
@@ -32,8 +35,9 @@ impl FuncInfo {
     ) -> FuncInfo {
         let is_entry = attributes.iter().any(|x| x == &String::from("EntryPoint"));
         FuncInfo {
-            name,
-            full_path: path,
+            name: name.clone(),
+            full_path: format!("{}--{}", path, name),
+            file_name: path,
             exported_type,
             args: Arguments {
                 arguments: Vec::new(),
@@ -77,7 +81,7 @@ impl SemanticTree<'_> {
         SemanticTree {
             ast_list,
             ir_tree: String::new(),
-            members: HashMap::new(),
+            members: MemberMap::new(),
             entry_point_id: None,
             func_id_count: 0,
         }
@@ -163,7 +167,7 @@ impl SemanticTree<'_> {
                                 panic!("found multiple entrypoint")
                             }
                         }
-                        self.members.insert(func_info.func_id, func_info);
+                        self.members.insert(func_info).unwrap();
                     }
                     _ => panic!(),
                 }
@@ -174,12 +178,12 @@ impl SemanticTree<'_> {
         self.func_id_count += count;
     }
 
-    pub fn get_entrypoint_func_name(&self) -> Option<String> {
+    pub fn get_entrypoint_func(&self) -> Option<&FuncInfo> {
         if self.entry_point_id.is_none() {
             None
         } else {
             let value = &self.members[self.entry_point_id.as_ref().unwrap()];
-            Some(value.name.clone())
+            Some(value)
         }
     }
 

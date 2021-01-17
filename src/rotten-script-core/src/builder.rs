@@ -10,6 +10,7 @@ pub struct Builder<'a> {
     result: String,
     debug_mode: bool,
     file_name: Option<String>,
+    logger: Box<dyn Fn(&str)>,
 }
 
 // TODO: unparse using semantic-analyzed tree
@@ -25,13 +26,19 @@ impl Builder<'_> {
     //     }
     // }
 
-    pub fn new<'a>(tree: &'a SemanticTree<'a>, ast: &'a Ast, file_name: &str) -> Builder<'a> {
+    pub fn new<'a>(
+        tree: &'a SemanticTree<'a>,
+        ast: &'a Ast,
+        file_name: &str,
+        logger: &'static dyn Fn(&str),
+    ) -> Builder<'a> {
         Builder {
             semantic_tree: tree,
             ast,
             debug_mode: false,
             result: String::new(),
             file_name: Some(file_name.to_string()),
+            logger: Box::new(logger),
         }
     }
 
@@ -47,11 +54,14 @@ impl Builder<'_> {
             });
         }
 
-        let entry = self.semantic_tree.get_entrypoint_func_name();
-        // NOTE: temporary
-        if entry.is_some() {
+        let entry = self.semantic_tree.get_entrypoint_func();
+
+        if entry.is_some()
+            && &self.semantic_tree.members[&(entry.as_ref().unwrap().full_path)].file_name
+                == self.file_name.as_ref().unwrap()
+        {
             self.result
-                .push_str(&format!("\n\n{}();\n", entry.unwrap()));
+                .push_str(&format!("\n\n{}();\n", entry.unwrap().name));
         }
 
         if self.debug_mode {
@@ -145,7 +155,7 @@ impl Builder<'_> {
                             self.unparse_rec(&ast.children.as_ref().unwrap()[1], depth);
                         }
                         3 => {
-                            self.result.push_str("export const ");
+                            self.result.push_str("export ");
                             self.unparse_rec(&ast.children.as_ref().unwrap()[2], depth);
                         }
                         _ => panic!(),

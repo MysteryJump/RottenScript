@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile rotten-script-wasm-ts",
+            "type": "typescript",
+            "tsconfig": "rotten-script-wasm/node-project/tsconfig.json",
+            "problemMatcher": "$tsc"
+        }
+    ]
+}

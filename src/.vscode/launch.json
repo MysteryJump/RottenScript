@@ -43,6 +43,22 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch rotten-script-wasm",
+            "program": "${workspaceFolder}/rotten-script-wasm/node-project/src/index.ts",
+            "preLaunchTask": "Compile rotten-script-wasm-ts",
+            "cwd": "${workspaceFolder}/rotten-script-wasm/node-project",
+            "console": "integratedTerminal",
+            "outFiles": [
+                "${workspaceFolder}/rotten-script-wasm/node-project/src/**/*.js"
+            ],
+            "args": [
+                "sample",
+                "-d"
+            ]
         }
     ]
 }

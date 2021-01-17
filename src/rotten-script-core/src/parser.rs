@@ -61,7 +61,9 @@ impl<'a> Parser<'a> {
                             return Err(ParseError::new("unexpected eof or token"));
                         }
                     }
-                    ReservedWord::Const => self.parse_exportable_const_declaration()?,
+                    ReservedWord::Const | ReservedWord::Export => {
+                        self.parse_exportable_const_declaration()?
+                    }
                     _ => return Err(ParseError::new("unexpected token")),
                 };
                 self.ast.add_child(child);
