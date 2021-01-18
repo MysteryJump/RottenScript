@@ -5,6 +5,7 @@ pub struct MemberMap {
     members: HashMap<i32, FuncInfo>,
     // key: func_name(full), value: func_id
     func_path_to_func_id_map: HashMap<String, i32>,
+    func_ids_of_files: HashMap<String, Vec<i32>>,
     count: usize,
 }
 
@@ -37,6 +38,7 @@ impl Default for MemberMap {
         MemberMap {
             members: HashMap::new(),
             func_path_to_func_id_map: HashMap::new(),
+            func_ids_of_files: HashMap::new(),
             count: 0,
         }
     }
@@ -55,13 +57,28 @@ impl MemberMap {
 
         self.func_path_to_func_id_map
             .insert(func_name, func.func_id);
-        let result = self.members.insert(func.func_id, func);
 
+        if self.func_path_to_func_id_map.contains_key(&func.file_name) {
+            self.func_ids_of_files
+                .insert(func.file_name.clone(), vec![func.func_id]);
+        } else {
+            self.func_ids_of_files
+                .get_mut(&func.file_name)
+                .unwrap()
+                .push(func.func_id)
+        }
+        let result = self.members.insert(func.func_id, func);
         if result.is_some() {
             Err(())
         } else {
             self.count += 1;
             Ok(())
         }
+    }
+
+    pub fn get_from_file_name(&self, file_name: &str) -> Vec<&FuncInfo> {
+        let ids = &self.func_ids_of_files[file_name];
+        let infos = ids.iter().map(|x| &self.members[x]).collect::<Vec<_>>();
+        infos
     }
 }

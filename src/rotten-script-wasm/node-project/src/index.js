@@ -32,7 +32,9 @@ else {
             rotten_script_wasm_1.add_file(item, text);
         }
         rotten_script_wasm_1.execute_processing();
-        fs_1.default.rmSync(`${args[2]}/dist`, { recursive: true });
+        if (fs_1.default.existsSync(`${args[2]}/dist`)) {
+            fs_1.default.rmSync(`${args[2]}/dist`, { recursive: true });
+        }
         fs_1.default.mkdirSync(`${args[2]}/dist`);
         for (const item of files) {
             const last_slash = item.lastIndexOf("/");

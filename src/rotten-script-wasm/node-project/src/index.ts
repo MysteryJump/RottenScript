@@ -34,7 +34,10 @@ if (args.length < 3) {
       add_file(item, text);
     }
     execute_processing();
-    fs.rmSync(`${args[2]}/dist`, { recursive: true });
+    if (fs.existsSync(`${args[2]}/dist`)) {
+      fs.rmSync(`${args[2]}/dist`, { recursive: true });
+    }
+
     fs.mkdirSync(`${args[2]}/dist`);
     for (const item of files) {
       const last_slash = item.lastIndexOf("/");
