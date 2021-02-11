@@ -17,12 +17,6 @@ fn main() {
         return;
     };
 
-    println!(
-        "{}",
-        env::current_dir().unwrap().as_path().to_str().unwrap()
-    );
-    println!("{}", path);
-
     let files = get_directory_files_recursive(&path).unwrap();
 
     let content_file_pair = files

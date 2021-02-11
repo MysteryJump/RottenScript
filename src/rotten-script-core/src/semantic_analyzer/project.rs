@@ -10,7 +10,7 @@ use super::{
 
 pub struct Project<'a> {
     pub member_map: MemberMap,
-    file_maps: HashMap<String, FileMap>,
+    pub file_maps: HashMap<String, FileMap<'a>>,
     project_dependency: Option<DependencyGraph>,
     pub ast_list: Vec<(String, &'a Ast)>,
     entry_point_id: Option<u32>,
@@ -32,8 +32,8 @@ impl<'a> Project<'a> {
     }
 
     pub fn analyze(&mut self) {
-        for (path, tunit) in self.ast_list.clone() {
-            let map = FileMap::new(path, tunit, self.func_id_count);
+        for (path, tunit) in &self.ast_list.clone() {
+            let map = FileMap::new(path.clone(), &tunit, self.func_id_count);
             map.members
                 .iter()
                 .for_each(|(_, f)| self.member_map.insert(f.clone()).unwrap());

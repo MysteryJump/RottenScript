@@ -11,7 +11,8 @@ impl<'a> Parser<'a> {
             if let Some(s) = self.tokens.look_ahead(1) {
                 match s {
                     Token::Identifier(_) => {
-                        asts.push(Ast::new_leaf(self.tokens.next().unwrap()));
+                        let next_token = self.tokens.next().unwrap();
+                        asts.push(Ast::new_leaf(next_token));
                         match self.tokens.look_ahead(1) {
                             Some(Token::Reserved(r)) => match r {
                                 ReservedWord::Comma => {

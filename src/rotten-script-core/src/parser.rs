@@ -205,6 +205,7 @@ impl<'a> Parser<'a> {
         let mut callers = Vec::new();
 
         if self.tokens.look_ahead(1) == Some(Token::Reserved(ReservedWord::RightParenthesis)) {
+            self.tokens.next();
             Ok(Ast::new_node_with_leaves(NonTerminal::Args, Vec::new()))
         } else {
             loop {

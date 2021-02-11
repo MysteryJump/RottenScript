@@ -23,7 +23,7 @@ impl FuncInfo {
         let is_entry = attributes.iter().any(|x| x == &String::from("EntryPoint"));
         FuncInfo {
             name: name.clone(),
-            full_path: format!("{}--{}", path, name),
+            full_path: format!("{}#{}", path, name),
             file_name: path,
             exported_type,
             args: Arguments {

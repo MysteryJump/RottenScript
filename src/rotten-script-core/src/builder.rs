@@ -53,7 +53,6 @@ impl Builder<'_> {
                 self.unparse_rec(x, 0);
             });
         }
-
         let entry = self.semantic_tree.get_entrypoint_func();
 
         if entry.is_some()
