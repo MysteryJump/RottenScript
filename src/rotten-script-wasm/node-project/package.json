@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
-    "start:sample1": "ts-node src/index.ts sample/sample1.rots"
+    "start:sample": "ts-node src/index.ts sample -d"
   },
   "author": "",
   "license": "MIT",

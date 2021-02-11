@@ -10,3 +10,4 @@ RottenScript is a language inspired by Rust and TypeScript
 - Expression-oriented language
 - Nominal Typing
 - Auto generation of type definition file.
+- Inner immutability

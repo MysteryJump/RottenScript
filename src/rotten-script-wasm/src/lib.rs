@@ -25,6 +25,7 @@ extern "C" {
 
 #[wasm_bindgen]
 pub fn process(file_str: &str) {
+    rotten_script_core::LOGGER.lock().unwrap().logger = Some(Box::new(log));
     let mut lexer = rotten_script_core::lexer::Lexer::new(file_str, &log);
     if lexer.lex().is_err() {
         log("some err from lexer");

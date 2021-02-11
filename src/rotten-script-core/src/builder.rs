@@ -1,12 +1,12 @@
 use crate::{
     lexer::{reserved_word::ReservedWord, token::Token},
     parser::{ast::Ast, ast_type::AstType, non_terminal::NonTerminal},
-    semantic_analyzer::semantic_tree::SemanticTree,
+    semantic_analyzer::project::Project,
 };
 
 pub struct Builder<'a> {
     ast: &'a Ast,
-    semantic_tree: &'a SemanticTree<'a>,
+    semantic_tree: &'a Project<'a>,
     result: String,
     debug_mode: bool,
     file_name: Option<String>,
@@ -27,7 +27,7 @@ impl Builder<'_> {
     // }
 
     pub fn new<'a>(
-        tree: &'a SemanticTree<'a>,
+        tree: &'a Project<'a>,
         ast: &'a Ast,
         file_name: &str,
         logger: &'static dyn Fn(&str),
@@ -57,7 +57,7 @@ impl Builder<'_> {
         let entry = self.semantic_tree.get_entrypoint_func();
 
         if entry.is_some()
-            && &self.semantic_tree.members[&(entry.as_ref().unwrap().full_path)].file_name
+            && &self.semantic_tree.member_map[&(entry.as_ref().unwrap().full_path)].file_name
                 == self.file_name.as_ref().unwrap()
         {
             self.result
@@ -65,7 +65,7 @@ impl Builder<'_> {
         }
 
         if self.debug_mode {
-            self.semantic_tree.print_semantic_tree();
+            self.semantic_tree.print_project_tree();
         }
     }
 

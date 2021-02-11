@@ -19,7 +19,9 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": [
+                "./rotten-script-wasm/node-project/sample"
+            ],
             "cwd": "${workspaceFolder}",
             "env": {
                 "RUST_BACKTRACE": "1"
@@ -41,7 +43,6 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
             "cwd": "${workspaceFolder}"
         },
         {
