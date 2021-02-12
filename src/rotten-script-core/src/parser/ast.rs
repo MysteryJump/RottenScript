@@ -1,15 +1,15 @@
-use crate::lexer::token::Token;
+use crate::lexer::token::TokenBase;
 
 use super::{ast_type::AstType, non_terminal::NonTerminal};
 
 pub struct Ast {
     pub children: Option<Vec<Ast>>,
-    pub token: Option<Token>,
+    pub token: Option<TokenBase>,
     pub ast_type: AstType,
 }
 
 impl Ast {
-    pub fn new_leaf(token: Token) -> Ast {
+    pub fn new_leaf(token: TokenBase) -> Ast {
         Ast {
             children: None,
             token: Some(token),

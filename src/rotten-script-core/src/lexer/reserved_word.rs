@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Copy)]
 pub enum ReservedWord {
     Assign = '=' as isize,
@@ -19,9 +21,9 @@ pub enum ReservedWord {
     From,
 }
 
-impl ToString for ReservedWord {
-    fn to_string(&self) -> String {
-        if *self < ReservedWord::Arrow {
+impl Display for ReservedWord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = if *self < ReservedWord::Arrow {
             (*self as u8 as char).to_string()
         } else {
             String::from(match *self {
@@ -34,7 +36,8 @@ impl ToString for ReservedWord {
                 ReservedWord::From => "from",
                 _ => panic!(),
             })
-        }
+        };
+        write!(f, "{}", text)
     }
 }
 
@@ -43,7 +46,7 @@ mod tests {
     use super::ReservedWord::*;
 
     #[test]
-    fn to_string_test() {
+    fn test_to_string() {
         let reserveds = vec![
             Assign,
             LeftParenthesis,

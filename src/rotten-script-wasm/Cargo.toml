@@ -3,9 +3,12 @@ name = "rotten-script-wasm"
 version = "0.1.0"
 authors = ["Yukio Tanaka"]
 edition = "2018"
+license = "MIT"
+description = "TBD"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+doctest = false
 
 [features]
 default = ["console_error_panic_hook"]

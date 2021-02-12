@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    lexer::{reserved_word::ReservedWord, token::Token},
+    lexer::{reserved_word::ReservedWord, token::TokenBase},
     parser::{ast::Ast, ast_type::AstType, non_terminal::NonTerminal},
     semantic_analyzer::project::Project,
 };
@@ -170,11 +170,11 @@ impl Builder<'_> {
             }
         } else {
             match ast.token.as_ref().unwrap() {
-                Token::String(s) => {
+                TokenBase::String(s) => {
                     self.result.push_str(&format!("\"{}\"", s));
                 }
-                Token::Number(n) | Token::Identifier(n) => self.result.push_str(n),
-                Token::Reserved(r) => {
+                TokenBase::Number(n) | TokenBase::Identifier(n) => self.result.push_str(n),
+                TokenBase::Reserved(r) => {
                     self.result.push_str(&r.to_string());
                     if r == &ReservedWord::LeftCurly || r == &ReservedWord::SemiColon {
                         self.result.push('\n');

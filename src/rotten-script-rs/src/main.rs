@@ -29,6 +29,7 @@ fn main() {
         .map(|x| {
             let mut lexer = Lexer::new(&x.1, &logger);
             lexer.lex().unwrap();
+            println!("{:?}", lexer.tokens);
             let token_stack = &mut TokenStack::new(&lexer.tokens);
             let mut parser = Parser::new(token_stack, &logger);
             parser.parse().unwrap();
