@@ -27,7 +27,7 @@ fn main() {
     let ast_pairs = content_file_pair
         .iter()
         .map(|x| {
-            let mut lexer = Lexer::new(&x.1, &logger);
+            let mut lexer = Lexer::new(&x.1, &x.0, &logger);
             lexer.lex().unwrap();
             println!("{:?}", lexer.tokens);
             let token_stack = &mut TokenStack::new(&lexer.tokens);

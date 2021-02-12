@@ -19,20 +19,20 @@ pub mod token_stack;
 
 mod import_parser;
 
-struct OptionTokenBase(Option<TokenBase>);
-struct OptionToken(Option<Token>);
+// struct OptionTokenBase(Option<TokenBase>);
+// struct OptionToken(Option<Token>);
 
-impl PartialEq<OptionTokenBase> for OptionToken {
-    fn eq(&self, other: &OptionTokenBase) -> bool {
-        self.eq(other)
-    }
-}
+// impl PartialEq<OptionTokenBase> for OptionToken {
+//     fn eq(&self, other: &OptionTokenBase) -> bool {
+//         self.eq(other)
+//     }
+// }
 
-impl PartialEq<OptionToken> for OptionTokenBase {
-    fn eq(&self, other: &OptionToken) -> bool {
-        self.eq(other)
-    }
-}
+// impl PartialEq<OptionToken> for OptionTokenBase {
+//     fn eq(&self, other: &OptionToken) -> bool {
+//         self.eq(other)
+//     }
+// }
 
 pub struct Parser<'a> {
     pub tokens: &'a mut TokenStack<'a>,

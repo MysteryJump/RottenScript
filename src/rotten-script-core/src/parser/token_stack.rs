@@ -100,13 +100,34 @@ impl<'a> TokenStack<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     use super::*;
     #[test]
     fn test_basic_utilities() {
+        let fp = Rc::new("".to_string());
         let tokens = [
-            Token::new(Ok(TokenBase::Reserved(ReservedWord::Arrow)), 0, 0, 0),
-            Token::new(Ok(TokenBase::Reserved(ReservedWord::Comma)), 0, 0, 0),
-            Token::new(Ok(TokenBase::Identifier("test".to_string())), 0, 0, 0),
+            Token::new(
+                Ok(TokenBase::Reserved(ReservedWord::Arrow)),
+                0,
+                0,
+                0,
+                fp.clone(),
+            ),
+            Token::new(
+                Ok(TokenBase::Reserved(ReservedWord::Comma)),
+                0,
+                0,
+                0,
+                fp.clone(),
+            ),
+            Token::new(
+                Ok(TokenBase::Identifier("test".to_string())),
+                0,
+                0,
+                0,
+                fp.clone(),
+            ),
         ];
         let mut token_stack = TokenStack::new(&tokens);
         assert_eq!(true, token_stack.has_next());
@@ -137,10 +158,30 @@ mod tests {
 
     #[test]
     fn test_scan_reserved() {
+        let fp = Rc::new("".to_string());
+
         let tokens = [
-            Token::new(Ok(TokenBase::Reserved(ReservedWord::Arrow)), 0, 0, 0),
-            Token::new(Ok(TokenBase::Reserved(ReservedWord::Comma)), 0, 0, 0),
-            Token::new(Ok(TokenBase::Identifier("test".to_string())), 0, 0, 0),
+            Token::new(
+                Ok(TokenBase::Reserved(ReservedWord::Arrow)),
+                0,
+                0,
+                0,
+                fp.clone(),
+            ),
+            Token::new(
+                Ok(TokenBase::Reserved(ReservedWord::Comma)),
+                0,
+                0,
+                0,
+                fp.clone(),
+            ),
+            Token::new(
+                Ok(TokenBase::Identifier("test".to_string())),
+                0,
+                0,
+                0,
+                fp.clone(),
+            ),
         ];
         let mut token_stack = TokenStack::new(&tokens);
         token_stack.scan_reserved(ReservedWord::Arrow).unwrap();
@@ -154,10 +195,31 @@ mod tests {
 
     #[test]
     fn test_consume_reserved() {
+        let fp = Rc::new("".to_string());
+
         let tokens = [
-            Token::new(Ok(TokenBase::Reserved(ReservedWord::Arrow)), 0, 0, 0),
-            Token::new(Ok(TokenBase::Reserved(ReservedWord::Comma)), 0, 0, 0),
-            Token::new(Ok(TokenBase::Identifier("test".to_string())), 0, 0, 0),
+            Token::new(
+                Ok(TokenBase::Reserved(ReservedWord::Arrow)),
+                0,
+                0,
+                0,
+                fp.clone(),
+            ),
+            Token::new(
+                Ok(TokenBase::Reserved(ReservedWord::Comma)),
+                0,
+                0,
+                0,
+                fp.clone(),
+            ),
+            Token::new(
+                Ok(TokenBase::Identifier("test".to_string())),
+                0,
+                0,
+                0,
+                fp.clone(),
+            )
+            .clone(),
         ];
         let mut token_stack = TokenStack::new(&tokens);
         token_stack.consume_reserved(ReservedWord::Arrow).unwrap();

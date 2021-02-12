@@ -1,6 +1,10 @@
+mod lexer_error;
 pub mod reserved_word;
 pub mod token;
 
+use std::rc::Rc;
+
+use lexer_error::LexerError;
 use regex::Regex;
 use reserved_word::ReservedWord;
 use token::{Token, TokenBase};
@@ -13,25 +17,48 @@ pub struct Lexer<'a> {
     ind: u64,
     col: u32,
     ln: u32,
+    file_path: Rc<String>,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new<F>(code: &'a str, logger: &'static F) -> Lexer<'a>
+    pub fn new<F>(code: &'a str, path: &'a str, logger: &'static F) -> Lexer<'a>
     where
         F: Fn(&str),
     {
         Lexer {
             source: code,
-            // tokens: Vec::new(),
             tokens: Vec::new(),
             logger: Box::new(logger),
             ind: 0,
             col: 1,
             ln: 1,
+            file_path: Rc::new(path.to_string()),
         }
     }
 
-    pub fn lex(&mut self) -> Result<(), String> {
+    fn push_token(&mut self, token_base: TokenBase) {
+        self.tokens.push(Token::new(
+            Ok(token_base),
+            self.ln,
+            self.col,
+            self.ind,
+            self.file_path.clone(),
+        ));
+    }
+
+    fn push_invalid_token(&mut self, base_str: String) -> Token {
+        let tk = Token::new(
+            Err(base_str),
+            self.ln,
+            self.col,
+            self.ind,
+            self.file_path.clone(),
+        );
+        self.tokens.push(tk.clone());
+        tk
+    }
+
+    pub fn lex(&mut self) -> Result<(), LexerError> {
         let reserved_regex =
             Regex::new(r"^(=[>]?|\(|\)|\{|\}|\[|\]|\.|,|;|const|let|import|export|from|default)")
                 .unwrap();
@@ -41,6 +68,7 @@ impl<'a> Lexer<'a> {
         let number_literal_regex = Regex::new(r"^(\.\d+|[1-9]\d*\.\d+|[1-9]\d*|0\.\d*|0)").unwrap();
         let mut line_com_mode = false;
         let mut code = String::from(self.source);
+        let mut invalid_tokens = Vec::new();
 
         while !code.is_empty() {
             let replace_length;
@@ -65,12 +93,10 @@ impl<'a> Lexer<'a> {
             } else if let Some(number) = number_literal_regex.find(&code) {
                 let mat = number.as_str();
                 // self.tokens.push(TokenBase::Number(mat.to_string()));
-                self.tokens.push(Token::new(
-                    Ok(TokenBase::Number(mat.to_string())),
-                    self.ln,
-                    self.col,
-                    self.ind,
-                ));
+                {
+                    self.push_token(TokenBase::Number(mat.to_string()));
+                }
+
                 replace_length = mat.len();
                 self.col += replace_length as u32;
             } else if let Some(reserveds) = reserved_regex.find(&code) {
@@ -94,26 +120,19 @@ impl<'a> Lexer<'a> {
                     "export" => ReservedWord::Export,
                     "from" => ReservedWord::From,
                     "default" => ReservedWord::Default,
-                    _ => return Err(String::from("some error")),
+                    _ => panic!(),
                 };
                 // self.tokens.push(TokenBase::Reserved(word));
-                self.tokens.push(Token::new(
-                    Ok(TokenBase::Reserved(word)),
-                    self.ln,
-                    self.col,
-                    self.ind,
-                ));
+
+                self.push_token(TokenBase::Reserved(word));
+
                 replace_length = mat.len();
                 self.col += replace_length as u32;
             } else if let Some(ident) = identifier_regex.find(&code) {
                 let mat = ident.as_str();
                 // self.tokens.push(TokenBase::Identifier(mat.to_string()));
-                self.tokens.push(Token::new(
-                    Ok(TokenBase::Identifier(mat.to_string())),
-                    self.ln,
-                    self.col,
-                    self.ind,
-                ));
+                self.push_token(TokenBase::Identifier(mat.to_string()));
+
                 replace_length = mat.len();
                 self.col += replace_length as u32;
             } else if code.starts_with("//") {
@@ -123,32 +142,38 @@ impl<'a> Lexer<'a> {
             } else if let Some(dq_str) = dq_str_literal_regex.find(&code) {
                 let mat = dq_str.as_str().trim_matches('"');
                 // self.tokens.push(TokenBase::String(mat.to_string()));
-                self.tokens.push(Token::new(
-                    Ok(TokenBase::String(mat.to_string())),
-                    self.ln,
-                    self.col,
-                    self.ind,
-                ));
+                self.push_token(TokenBase::String(mat.to_string()));
+
                 replace_length = mat.len() + 2;
                 self.col += replace_length as u32;
             } else if let Some(sq_str) = sq_str_literal_regex.find(&code) {
                 let mat = sq_str.as_str().trim_matches('\'');
                 // self.tokens.push(TokenBase::String(mat.to_string()));
-                self.tokens.push(Token::new(
-                    Ok(TokenBase::String(mat.to_string())),
-                    self.ln,
-                    self.col,
-                    self.ind,
-                ));
+                self.push_token(TokenBase::String(mat.to_string()));
                 replace_length = mat.len() + 2;
                 self.col += replace_length as u32;
             } else {
-                return Err(String::from("found unknown token"));
+                let next = code.find(&['\r', '\n', '\t', ' ', '\0'][..]);
+                match next {
+                    Some(ind) if ind > 0 => {
+                        invalid_tokens.push(self.push_invalid_token(code[..ind].to_string()));
+                        replace_length = ind;
+                    }
+                    None => {
+                        invalid_tokens.push(self.push_invalid_token(code[..].to_string()));
+                        replace_length = code.len();
+                    }
+                    Some(_) => panic!("out of bound!"),
+                }
             }
             self.ind += replace_length as u64;
             code.replace_range(0..replace_length, "");
         }
-        Ok(())
+        if invalid_tokens.is_empty() {
+            Ok(())
+        } else {
+            Err(LexerError::new(invalid_tokens))
+        }
     }
 }
 
@@ -174,7 +199,7 @@ mod tests {
             "\n//\r\n",
         ];
         for item in cases {
-            let mut lexer = Lexer::new(item, &logger);
+            let mut lexer = Lexer::new(item, "", &logger);
             lexer.lex().unwrap();
             assert_eq!(0, lexer.tokens.len());
         }
@@ -183,7 +208,7 @@ mod tests {
     fn test_identifier() {
         let cases = vec!["ident", "ident ident", "ide\nnt", "ode \t den"];
         for (ind, item) in cases.iter().enumerate() {
-            let mut lexer = Lexer::new(item, &logger);
+            let mut lexer = Lexer::new(item, "", &logger);
             lexer.lex().unwrap();
 
             if ind == 0 {
@@ -210,7 +235,7 @@ mod tests {
     fn test_sq_string() {
         let cases = vec!["'test1'", "'test3''yrdy'", "'tes\nyr'", "'test\"te'"];
         for (ind, item) in cases.iter().enumerate() {
-            let mut lexer = Lexer::new(item, &logger);
+            let mut lexer = Lexer::new(item, "", &logger);
             if lexer.lex().is_ok() {
                 match ind {
                     0 => {
@@ -240,6 +265,8 @@ mod tests {
                     }
                     _ => panic!(),
                 }
+            } else {
+                assert_eq!(2, ind);
             }
         }
     }
@@ -253,8 +280,9 @@ mod tests {
             r#""test'te""#,
         ];
         for (ind, item) in cases.iter().enumerate() {
-            let mut lexer = Lexer::new(item, &logger);
-            if lexer.lex().is_ok() {
+            let mut lexer = Lexer::new(item, "", &logger);
+            let result = lexer.lex();
+            if result.is_ok() {
                 match ind {
                     0 => {
                         assert_eq!(1, lexer.tokens.len());
@@ -283,6 +311,8 @@ mod tests {
                     }
                     _ => panic!(),
                 }
+            } else {
+                assert_eq!(2, ind);
             }
         }
     }
@@ -290,7 +320,7 @@ mod tests {
     fn test_number() {
         let valid_cases = vec!["33", ".435", "3232.042", "0", "0.33"];
         for (ind, item) in valid_cases.iter().enumerate() {
-            let mut lexer = Lexer::new(item, &logger);
+            let mut lexer = Lexer::new(item, "", &logger);
             lexer.lex().unwrap();
             match ind {
                 0 => {
@@ -341,7 +371,7 @@ mod tests {
         use super::ReservedWord::*;
         use super::TokenBase::Reserved;
         for (ind, case) in cases.iter().enumerate() {
-            let mut lexer = Lexer::new(case, &logger);
+            let mut lexer = Lexer::new(case, "", &logger);
             lexer.lex().unwrap();
             assert_eq!(1, lexer.tokens.len());
             let first = lexer.tokens[0].get_token().as_ref().unwrap().clone();

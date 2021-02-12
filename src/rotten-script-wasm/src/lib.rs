@@ -26,7 +26,7 @@ extern "C" {
 #[wasm_bindgen]
 pub fn process(file_str: &str) {
     rotten_script_core::LOGGER.lock().unwrap().logger = Some(Box::new(log));
-    let mut lexer = rotten_script_core::lexer::Lexer::new(file_str, &log);
+    let mut lexer = rotten_script_core::lexer::Lexer::new(file_str, "", &log);
     if lexer.lex().is_err() {
         log("some err from lexer");
     }
@@ -57,7 +57,7 @@ pub fn execute_processing() {
     let asts = files
         .iter()
         .map(|x| {
-            let mut lexer = Lexer::new(&x.1, &log);
+            let mut lexer = Lexer::new(&x.1, &x.0, &log);
             lexer.lex().unwrap();
             let token_stack = &mut TokenStack::new(&lexer.tokens);
             let mut parser = Parser::new(token_stack, &log);

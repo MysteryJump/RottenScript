@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, rc::Rc};
 
 use reserved_word::ReservedWord;
 
@@ -20,18 +20,26 @@ pub struct Token {
     col: u32,
     ind: u64,
     len: usize,
+    file_path: Rc<String>,
 }
 
 #[derive(Debug)]
 pub struct TokenPosition {
-    ln: u32,
-    col: u32,
-    ind: u64,
-    len: usize,
+    pub ln: u32,
+    pub col: u32,
+    pub ind: u64,
+    pub len: usize,
+    pub path: Rc<String>,
 }
 
 impl Token {
-    pub fn new(token_base: Result<TokenBase, String>, ln: u32, col: u32, ind: u64) -> Self {
+    pub fn new(
+        token_base: Result<TokenBase, String>,
+        ln: u32,
+        col: u32,
+        ind: u64,
+        file_path: Rc<String>,
+    ) -> Self {
         let base_str = match &token_base {
             Ok(tb) => tb.to_string(),
             Err(bs) => bs.to_string(),
@@ -47,6 +55,7 @@ impl Token {
             col,
             ind,
             len,
+            file_path,
         }
     }
 
@@ -60,7 +69,12 @@ impl Token {
             col: self.col,
             ind: self.ind,
             len: self.len,
+            path: self.file_path.clone(),
         }
+    }
+
+    pub fn get_base_text(&self) -> &str {
+        &self.base_str
     }
 }
 

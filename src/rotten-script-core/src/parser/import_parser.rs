@@ -92,6 +92,8 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     use crate::lexer::{reserved_word::ReservedWord::*, token::TokenBase::*};
 
     use super::{
@@ -162,9 +164,11 @@ mod tests {
     fn to_token_list(
         token_bases: &[crate::lexer::token::TokenBase],
     ) -> Vec<crate::lexer::token::Token> {
+        let fp = Rc::new("".to_string());
+
         token_bases
             .iter()
-            .map(|x| crate::lexer::token::Token::new(Ok(x.clone()), 0, 0, 0))
+            .map(|x| crate::lexer::token::Token::new(Ok(x.clone()), 0, 0, 0, fp.clone()))
             .collect()
     }
 
