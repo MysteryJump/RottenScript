@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     lexer::{reserved_word::ReservedWord, token::Token},
     parser::{ast::Ast, ast_type::AstType, non_terminal::NonTerminal},
@@ -5,39 +7,19 @@ use crate::{
 };
 
 pub struct Builder<'a> {
-    ast: &'a Ast,
     semantic_tree: &'a Project<'a>,
     result: String,
     debug_mode: bool,
-    file_name: Option<String>,
     logger: Box<dyn Fn(&str)>,
 }
 
 // TODO: unparse using semantic-analyzed tree
 impl Builder<'_> {
-    // pub fn new(ast: &Ast) -> Builder {
-    //     let tree = semantic_analyzer::analyze(vec![(String::from("sample.rots"), ast)]);
-    //     Builder {
-    //         ast,
-    //         semantic_tree: &tree,
-    //         result: String::new(),
-    //         debug_mode: false,
-    //         file_name: None,
-    //     }
-    // }
-
-    pub fn new<'a>(
-        tree: &'a Project<'a>,
-        ast: &'a Ast,
-        file_name: &str,
-        logger: &'static dyn Fn(&str),
-    ) -> Builder<'a> {
+    pub fn new<'a>(tree: &'a Project<'a>, logger: &'static dyn Fn(&str)) -> Builder<'a> {
         Builder {
             semantic_tree: tree,
-            ast,
             debug_mode: false,
             result: String::new(),
-            file_name: Some(file_name.to_string()),
             logger: Box::new(logger),
         }
     }
@@ -46,35 +28,37 @@ impl Builder<'_> {
         self.debug_mode = true;
     }
 
-    pub fn unparse(&mut self) {
-        let ast = self.ast; // translation_unit
-        if ast.children.is_some() {
-            ast.children.as_ref().unwrap().iter().for_each(|x| {
-                self.unparse_rec(x, 0);
-            });
-        }
-        let entry = self.semantic_tree.get_entrypoint_func();
-
-        if entry.is_some()
-            && &self.semantic_tree.member_map[&(entry.as_ref().unwrap().full_path)].file_name
-                == self.file_name.as_ref().unwrap()
-        {
-            self.result
-                .push_str(&format!("\n\n{}();\n", entry.unwrap().name));
-        }
-
+    pub fn unparse(&mut self) -> HashMap<String, String> {
+        let mut built_map = HashMap::new();
         if self.debug_mode {
             self.semantic_tree.print_project_tree();
         }
+
+        for (file_name, map) in &self.semantic_tree.file_maps {
+            let ast = map.ast;
+            if ast.children.is_some() {
+                ast.children.as_ref().unwrap().iter().for_each(|x| {
+                    self.unparse_rec(x, 0);
+                });
+            }
+            let entry = self.semantic_tree.get_entrypoint_func();
+
+            if entry.is_some()
+                && &self.semantic_tree.member_map[&(entry.as_ref().unwrap().full_path)].file_name
+                    == file_name
+            {
+                self.result
+                    .push_str(&format!("\n{}();\n", entry.unwrap().name));
+            }
+
+            built_map.insert(file_name.clone(), self.result.clone());
+            self.result.clear();
+        }
+        built_map
     }
 
     fn unparse_rec(&mut self, ast: &Ast, depth: u32) {
         if let AstType::NonTerminal(t) = &ast.ast_type {
-            // if t != &NonTerminal::Attribute {
-            //     ast.children.as_ref().unwrap().iter().for_each(|x| {
-            //         self.unparse_rec(x);
-            //     })
-            // }
             match t {
                 NonTerminal::ConstDeclaration => {
                     self.result.push_str("const ");

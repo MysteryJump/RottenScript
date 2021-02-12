@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use crate::parser::ast::Ast;
 
 use super::{
-    dependency_graph::DependencyGraph,
-    func_info::FuncInfo,
-    member_map::{FileMap, MemberMap},
+    dependency_graph::DependencyGraph, file_map::FileMap, func_info::FuncInfo,
+    member_map::MemberMap,
 };
 
 pub struct Project<'a> {
@@ -39,6 +38,23 @@ impl<'a> Project<'a> {
                 .for_each(|(_, f)| self.member_map.insert(f.clone()).unwrap());
             self.func_id_count += map.func_count;
             self.file_maps.insert(map.path.clone(), map);
+        }
+        self.search_entry_point();
+    }
+
+    fn search_entry_point(&mut self) {
+        let points = self.member_map.get_entrypoint_ids();
+        match points.len() {
+            0 => {}
+            1 => {
+                self.entry_point_id = Some(points[0]);
+            }
+            _ => {
+                panic!(
+                    "cannot determine entry point because compiler found {} entry points.",
+                    points.len()
+                );
+            }
         }
     }
 

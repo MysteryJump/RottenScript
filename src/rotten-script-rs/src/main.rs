@@ -40,8 +40,8 @@ fn main() {
     let result = project.call_builder(true, &logger);
 
     for item in result {
-        println!("// {}\n", item.0);
-        println!("{}\n", item.1);
+        println!("// {}", item.0);
+        println!("{}", item.1);
     }
 }
 

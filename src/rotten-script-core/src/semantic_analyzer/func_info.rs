@@ -48,13 +48,11 @@ pub enum ExportedType {
 struct Arguments {
     arguments: Vec<(String, Type)>,
 }
-#[allow(dead_code)]
 #[derive(Debug)]
 enum Type {
     Primitive(PrimitiveType),
     Object,
 }
-#[allow(dead_code)]
 #[derive(Debug)]
 enum PrimitiveType {
     Number,
