@@ -4,10 +4,7 @@ use non_terminal::NonTerminal;
 use parse_error::ParseError;
 use token_stack::TokenStack;
 
-use crate::lexer::{
-    reserved_word::ReservedWord,
-    token::{Token, TokenBase},
-};
+use crate::lexer::{reserved_word::ReservedWord, token::TokenBase};
 
 use self::ast::Ast;
 
@@ -37,19 +34,13 @@ mod import_parser;
 pub struct Parser<'a> {
     pub tokens: &'a mut TokenStack<'a>,
     pub ast: Ast,
-    #[allow(dead_code)]
-    logger: Box<dyn Fn(&str)>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new<F>(tokens: &'a mut TokenStack<'a>, logger: &'static F) -> Parser<'a>
-    where
-        F: Fn(&str),
-    {
+    pub fn new(tokens: &'a mut TokenStack<'a>) -> Parser<'a> {
         Parser {
             tokens,
             ast: Ast::new_node_with_leaves(NonTerminal::TranslationUnit, Vec::new()),
-            logger: Box::new(logger),
         }
     }
 
@@ -323,7 +314,6 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_name() {}

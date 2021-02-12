@@ -27,27 +27,23 @@ fn main() {
     let ast_pairs = content_file_pair
         .iter()
         .map(|x| {
-            let mut lexer = Lexer::new(&x.1, &x.0, &logger);
+            let mut lexer = Lexer::new(&x.1, &x.0);
             lexer.lex().unwrap();
             println!("{:?}", lexer.tokens);
             let token_stack = &mut TokenStack::new(&lexer.tokens);
-            let mut parser = Parser::new(token_stack, &logger);
+            let mut parser = Parser::new(token_stack);
             parser.parse().unwrap();
             (x.0.clone(), parser.ast)
         })
         .collect::<Vec<_>>();
 
     let project = analyze(ast_pairs.iter().map(|x| (x.0.clone(), &x.1)).collect());
-    let result = project.call_builder(true, &logger);
+    let result = project.call_builder(true);
 
     for item in result {
         println!("// {}", item.0);
         println!("{}", item.1);
     }
-}
-
-fn logger(line: &str) {
-    println!("{}", line);
 }
 
 fn get_directory_files_recursive(path: &str) -> io::Result<Vec<String>> {

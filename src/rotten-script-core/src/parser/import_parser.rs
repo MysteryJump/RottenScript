@@ -118,7 +118,7 @@ mod tests {
         ];
         let token_list = to_token_list(&tokens);
         let mut token_stack = TokenStack::new(&token_list);
-        let mut parser = Parser::new(&mut token_stack, &logger);
+        let mut parser = Parser::new(&mut token_stack);
         let ast = parser.parse_named_import_declaration().unwrap();
         assert_eq!(NonTerminal(NamedImportDeclaration), ast.ast_type);
         let children = ast.children.as_ref().unwrap();
@@ -139,7 +139,7 @@ mod tests {
         ];
         let token_list = to_token_list(&tokens);
         let mut token_stack = TokenStack::new(&token_list);
-        let mut parser = Parser::new(&mut token_stack, &logger);
+        let mut parser = Parser::new(&mut token_stack);
         let ast = parser.parse_default_import_declaration().unwrap();
         assert_eq!(NonTerminal(DefaultImportDeclaration), ast.ast_type);
         let children = ast.children.as_ref().unwrap();
@@ -171,6 +171,4 @@ mod tests {
             .map(|x| crate::lexer::token::Token::new(Ok(x.clone()), 0, 0, 0, fp.clone()))
             .collect()
     }
-
-    fn logger(_: &str) {}
 }

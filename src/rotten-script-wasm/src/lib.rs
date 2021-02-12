@@ -21,15 +21,18 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+    #[wasm_bindgen(js_namespace = console, js_name = log)]
+    fn log_string(s: String);
 }
 
 #[wasm_bindgen]
 pub fn process(file_str: &str) {
-    rotten_script_core::LOGGER.lock().unwrap().logger = Some(Box::new(log));
-    let mut lexer = rotten_script_core::lexer::Lexer::new(file_str, "", &log);
+    rotten_script_core::LOGGER.lock().unwrap().logger = Some(Box::new(log_string));
+    let mut lexer = rotten_script_core::lexer::Lexer::new(file_str, "");
     if lexer.lex().is_err() {
         log("some err from lexer");
-    }
+    };
+
     let mut str3 = String::from("[");
     for item in &lexer.tokens {
         str3.push_str(&format!("{}, ", &item));
@@ -37,13 +40,13 @@ pub fn process(file_str: &str) {
     // log(&format!("{}]", str.trim_end().trim_matches(',')));
 
     let token_stack = &mut TokenStack::new(&lexer.tokens);
-    let mut parser = Parser::new(token_stack, &log);
+    let mut parser = Parser::new(token_stack);
     if parser.parse().is_err() {
         log("some err from parser");
     }
     let ast = parser.ast;
     let tree = analyze(vec![("sample1.rots".to_string(), &ast)]);
-    let result = tree.call_builder(false, &log);
+    let result = tree.call_builder(false);
 
     for item in result {
         log(&format!("// {}\n", item.0));
@@ -53,20 +56,21 @@ pub fn process(file_str: &str) {
 
 #[wasm_bindgen]
 pub fn execute_processing() {
+    rotten_script_core::LOGGER.lock().unwrap().logger = Some(Box::new(log_string));
     let files = &SOURCES.lock().unwrap().file_pairs;
     let asts = files
         .iter()
         .map(|x| {
-            let mut lexer = Lexer::new(&x.1, &x.0, &log);
+            let mut lexer = Lexer::new(&x.1, &x.0);
             lexer.lex().unwrap();
             let token_stack = &mut TokenStack::new(&lexer.tokens);
-            let mut parser = Parser::new(token_stack, &log);
+            let mut parser = Parser::new(token_stack);
             parser.parse().unwrap();
             (x.0.clone(), parser.ast)
         })
         .collect::<Vec<_>>();
     let tree = analyze(asts.iter().map(|x| (x.0.clone(), &x.1)).collect());
-    RESULTS.lock().unwrap().file_pairs = Some(tree.call_builder(false, &log));
+    RESULTS.lock().unwrap().file_pairs = Some(tree.call_builder(false));
 }
 
 #[wasm_bindgen]

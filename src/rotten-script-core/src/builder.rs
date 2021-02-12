@@ -10,17 +10,15 @@ pub struct Builder<'a> {
     semantic_tree: &'a Project<'a>,
     result: String,
     debug_mode: bool,
-    logger: Box<dyn Fn(&str)>,
 }
 
 // TODO: unparse using semantic-analyzed tree
 impl Builder<'_> {
-    pub fn new<'a>(tree: &'a Project<'a>, logger: &'static dyn Fn(&str)) -> Builder<'a> {
+    pub fn new<'a>(tree: &'a Project<'a>) -> Builder<'a> {
         Builder {
             semantic_tree: tree,
             debug_mode: false,
             result: String::new(),
-            logger: Box::new(logger),
         }
     }
 

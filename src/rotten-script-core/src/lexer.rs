@@ -11,9 +11,7 @@ use token::{Token, TokenBase};
 
 pub struct Lexer<'a> {
     source: &'a str,
-    // pub tokens: Vec<TokenBase>,
     pub tokens: Vec<Token>,
-    logger: Box<dyn Fn(&str)>,
     ind: u64,
     col: u32,
     ln: u32,
@@ -21,14 +19,10 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new<F>(code: &'a str, path: &'a str, logger: &'static F) -> Lexer<'a>
-    where
-        F: Fn(&str),
-    {
+    pub fn new(code: &'a str, path: &'a str) -> Lexer<'a> {
         Lexer {
             source: code,
             tokens: Vec::new(),
-            logger: Box::new(logger),
             ind: 0,
             col: 1,
             ln: 1,
@@ -92,7 +86,7 @@ impl<'a> Lexer<'a> {
                 replace_length = 1;
             } else if let Some(number) = number_literal_regex.find(&code) {
                 let mat = number.as_str();
-                // self.tokens.push(TokenBase::Number(mat.to_string()));
+
                 {
                     self.push_token(TokenBase::Number(mat.to_string()));
                 }
@@ -199,7 +193,7 @@ mod tests {
             "\n//\r\n",
         ];
         for item in cases {
-            let mut lexer = Lexer::new(item, "", &logger);
+            let mut lexer = Lexer::new(item, "");
             lexer.lex().unwrap();
             assert_eq!(0, lexer.tokens.len());
         }
@@ -208,7 +202,7 @@ mod tests {
     fn test_identifier() {
         let cases = vec!["ident", "ident ident", "ide\nnt", "ode \t den"];
         for (ind, item) in cases.iter().enumerate() {
-            let mut lexer = Lexer::new(item, "", &logger);
+            let mut lexer = Lexer::new(item, "");
             lexer.lex().unwrap();
 
             if ind == 0 {
@@ -235,7 +229,7 @@ mod tests {
     fn test_sq_string() {
         let cases = vec!["'test1'", "'test3''yrdy'", "'tes\nyr'", "'test\"te'"];
         for (ind, item) in cases.iter().enumerate() {
-            let mut lexer = Lexer::new(item, "", &logger);
+            let mut lexer = Lexer::new(item, "");
             if lexer.lex().is_ok() {
                 match ind {
                     0 => {
@@ -280,7 +274,7 @@ mod tests {
             r#""test'te""#,
         ];
         for (ind, item) in cases.iter().enumerate() {
-            let mut lexer = Lexer::new(item, "", &logger);
+            let mut lexer = Lexer::new(item, "");
             let result = lexer.lex();
             if result.is_ok() {
                 match ind {
@@ -320,7 +314,7 @@ mod tests {
     fn test_number() {
         let valid_cases = vec!["33", ".435", "3232.042", "0", "0.33"];
         for (ind, item) in valid_cases.iter().enumerate() {
-            let mut lexer = Lexer::new(item, "", &logger);
+            let mut lexer = Lexer::new(item, "");
             lexer.lex().unwrap();
             match ind {
                 0 => {
@@ -371,7 +365,7 @@ mod tests {
         use super::ReservedWord::*;
         use super::TokenBase::Reserved;
         for (ind, case) in cases.iter().enumerate() {
-            let mut lexer = Lexer::new(case, "", &logger);
+            let mut lexer = Lexer::new(case, "");
             lexer.lex().unwrap();
             assert_eq!(1, lexer.tokens.len());
             let first = lexer.tokens[0].get_token().as_ref().unwrap().clone();
@@ -397,6 +391,4 @@ mod tests {
             }
         }
     }
-
-    fn logger(_line: &str) {}
 }
