@@ -121,13 +121,7 @@ mod tests {
                 0,
                 fp.clone(),
             ),
-            Token::new(
-                Ok(TokenBase::Identifier("test".to_string())),
-                0,
-                0,
-                0,
-                fp.clone(),
-            ),
+            Token::new(Ok(TokenBase::Identifier("test".to_string())), 0, 0, 0, fp),
         ];
         let mut token_stack = TokenStack::new(&tokens);
         assert_eq!(true, token_stack.has_next());
@@ -175,13 +169,7 @@ mod tests {
                 0,
                 fp.clone(),
             ),
-            Token::new(
-                Ok(TokenBase::Identifier("test".to_string())),
-                0,
-                0,
-                0,
-                fp.clone(),
-            ),
+            Token::new(Ok(TokenBase::Identifier("test".to_string())), 0, 0, 0, fp),
         ];
         let mut token_stack = TokenStack::new(&tokens);
         token_stack.scan_reserved(ReservedWord::Arrow).unwrap();
@@ -212,14 +200,7 @@ mod tests {
                 0,
                 fp.clone(),
             ),
-            Token::new(
-                Ok(TokenBase::Identifier("test".to_string())),
-                0,
-                0,
-                0,
-                fp.clone(),
-            )
-            .clone(),
+            Token::new(Ok(TokenBase::Identifier("test".to_string())), 0, 0, 0, fp),
         ];
         let mut token_stack = TokenStack::new(&tokens);
         token_stack.consume_reserved(ReservedWord::Arrow).unwrap();

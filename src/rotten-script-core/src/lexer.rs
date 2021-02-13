@@ -1,10 +1,10 @@
-mod lexer_error;
+mod lex_error;
 pub mod reserved_word;
 pub mod token;
 
 use std::rc::Rc;
 
-use lexer_error::LexerError;
+use lex_error::LexError;
 use regex::Regex;
 use reserved_word::ReservedWord;
 use token::{Token, TokenBase};
@@ -52,10 +52,11 @@ impl<'a> Lexer<'a> {
         tk
     }
 
-    pub fn lex(&mut self) -> Result<(), LexerError> {
-        let reserved_regex =
-            Regex::new(r"^(=[>]?|\(|\)|\{|\}|\[|\]|\.|,|;|const|let|import|export|from|default)")
-                .unwrap();
+    pub fn lex(&mut self) -> Result<(), LexError> {
+        let reserved_regex = Regex::new(
+            r"^(=[>]?|\(|\)|\{|\}|\[|\]|\.|,|;|const|let|import|export|from|default|true|false)",
+        )
+        .unwrap();
         let identifier_regex = Regex::new(r"^([_a-zA-Z][_a-zA-Z0-9]*)").unwrap();
         let dq_str_literal_regex = Regex::new(r#"^"(.*?)""#).unwrap();
         let sq_str_literal_regex = Regex::new(r"^'(.*?)'").unwrap();
@@ -114,6 +115,8 @@ impl<'a> Lexer<'a> {
                     "export" => ReservedWord::Export,
                     "from" => ReservedWord::From,
                     "default" => ReservedWord::Default,
+                    "true" => ReservedWord::True,
+                    "false" => ReservedWord::False,
                     _ => panic!(),
                 };
                 // self.tokens.push(TokenBase::Reserved(word));
@@ -166,7 +169,7 @@ impl<'a> Lexer<'a> {
         if invalid_tokens.is_empty() {
             Ok(())
         } else {
-            Err(LexerError::new(invalid_tokens))
+            Err(LexError::new(invalid_tokens))
         }
     }
 }
@@ -360,7 +363,7 @@ mod tests {
     fn test_reserved() {
         let cases = vec![
             "=", "(", ")", "{", "}", "[", "]", ".", ",", ";", "=>", "const", "let", "import",
-            "export", "default", "from",
+            "export", "default", "from", "true", "false",
         ];
         use super::ReservedWord::*;
         use super::TokenBase::Reserved;
@@ -387,6 +390,8 @@ mod tests {
                 14 => assert_eq!(Reserved(Export), first),
                 15 => assert_eq!(Reserved(Default), first),
                 16 => assert_eq!(Reserved(From), first),
+                17 => assert_eq!(Reserved(True), first),
+                18 => assert_eq!(Reserved(False), first),
                 _ => panic!(),
             }
         }

@@ -6,6 +6,7 @@ pub struct Ast {
     pub children: Option<Vec<Ast>>,
     pub token: Option<TokenBase>,
     pub ast_type: AstType,
+    invalid_ast: bool,
 }
 
 impl Ast {
@@ -14,6 +15,7 @@ impl Ast {
             children: None,
             token: Some(token),
             ast_type: AstType::Terminal,
+            invalid_ast: false,
         }
     }
 
@@ -22,6 +24,7 @@ impl Ast {
             children: Some(children),
             token: None,
             ast_type: AstType::NonTerminal(node_type),
+            invalid_ast: false,
         }
     }
 
@@ -37,6 +40,14 @@ impl Ast {
         for item in ast {
             self.add_child(item);
         }
+    }
+
+    pub fn is_invalid(&self) -> bool {
+        self.invalid_ast
+    }
+
+    pub fn set_invalid(&mut self) {
+        self.invalid_ast = true;
     }
 
     pub fn unparse(&self) -> String {

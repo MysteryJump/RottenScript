@@ -19,6 +19,8 @@ pub enum ReservedWord {
     Export,
     Default,
     From,
+    False,
+    True,
 }
 
 impl Display for ReservedWord {
@@ -34,6 +36,8 @@ impl Display for ReservedWord {
                 ReservedWord::Export => "export",
                 ReservedWord::Default => "default",
                 ReservedWord::From => "from",
+                ReservedWord::True => "true",
+                ReservedWord::False => "false",
                 _ => panic!(),
             })
         };
@@ -65,6 +69,8 @@ mod tests {
             Export,
             Default,
             From,
+            True,
+            False,
         ];
         for item in reserveds {
             match item {
@@ -85,6 +91,8 @@ mod tests {
                 Export => assert_eq!("export", item.to_string()),
                 Default => assert_eq!("default", item.to_string()),
                 From => assert_eq!("from", item.to_string()),
+                True => assert_eq!("true", item.to_string()),
+                False => assert_eq!("false", item.to_string()),
             }
         }
     }

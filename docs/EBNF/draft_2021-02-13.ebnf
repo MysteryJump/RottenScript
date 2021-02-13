@@ -1,0 +1,24 @@
+(* Draft v0.0.1-20210103 *)
+TranslationUnit = { ImportDeclaration } , { { Attribute } , ExportableConstDeclaration };
+Attribute = "[" , Identifier , "]";
+ExportableConstDeclaration = [ "export" , ["default"] ] , ConstDeclaration;
+
+ConstDeclaration = "const" , DeclarationBody;
+LetDeclaration = "let" , DeclarationBody;
+DeclarationBody = Identifier , "=" , Expression , ";";
+
+Expression = Literal | CallExpression | FunctionExpression;
+CallExpression = Identifier , { "." Identifier } Args;
+Args = "(" , [ { Expression , "," } , Expression ] ")";
+FunctionExpression = "(" , ")" , "=>" , CompoundExpression;
+ExpressionStatement = Expression , ";";
+CompoundExpression = "{" , { ExpressionStatement } , [ Expression ] , "}";
+Literal = Number | DoubleQuotesString | SingleQuotesString | Boolean;
+Boolean = "true" | "false";
+
+NamedImportDeclaration = "import" , "{" , Identifier , { "," , Identifier } , "}" , "from" (DoubleQuotesString | SingleQuotesString);
+DefaultImportDeclaration = "import" , Identifier , "from" , (DoubleQuotesString | SingleQuotesString);
+ImportDeclaration = (NamedImportDeclaration | DefaultImportDeclaration) , ";";
+
+
+(* Boolean *)

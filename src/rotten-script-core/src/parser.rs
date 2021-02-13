@@ -1,7 +1,7 @@
 use std::vec;
 
 use non_terminal::NonTerminal;
-use parse_error::ParseError;
+use parse_error::{ParseError, ParseError2};
 use token_stack::TokenStack;
 
 use crate::lexer::{reserved_word::ReservedWord, token::TokenBase};
@@ -10,6 +10,7 @@ use self::ast::Ast;
 
 pub mod ast;
 pub mod ast_type;
+mod invalid_syntax;
 pub(crate) mod non_terminal;
 mod parse_error;
 pub mod token_stack;
@@ -34,6 +35,7 @@ mod import_parser;
 pub struct Parser<'a> {
     pub tokens: &'a mut TokenStack<'a>,
     pub ast: Ast,
+    parse_error: ParseError2,
 }
 
 impl<'a> Parser<'a> {
@@ -41,6 +43,7 @@ impl<'a> Parser<'a> {
         Parser {
             tokens,
             ast: Ast::new_node_with_leaves(NonTerminal::TranslationUnit, Vec::new()),
+            parse_error: ParseError2::new(),
         }
     }
 
@@ -182,7 +185,10 @@ impl<'a> Parser<'a> {
             NonTerminal::Expression,
             vec![match self.tokens.look_ahead(1).unwrap() {
                 TokenBase::Identifier(_) => self.parse_call_expression()?,
-                TokenBase::String(_) | TokenBase::Number(_) => {
+                TokenBase::String(_)
+                | TokenBase::Number(_)
+                | TokenBase::Reserved(ReservedWord::True)
+                | TokenBase::Reserved(ReservedWord::False) => {
                     let token = self.tokens.next().unwrap();
                     Ast::new_leaf(token)
                 }
