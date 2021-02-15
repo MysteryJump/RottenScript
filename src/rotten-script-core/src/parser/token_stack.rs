@@ -3,7 +3,10 @@ use crate::lexer::{
     token::{Token, TokenBase},
 };
 
-use super::parse_error::ParseError;
+use super::{
+    invalid_syntax::{ExpectedActuallyTokenPair, InvalidSyntax, InvalidSyntaxType},
+    parse_error::ParseError,
+};
 // FIXME: None also indicates lexing error, this will fix use Token instead of TokenBase.
 pub struct TokenStack<'a> {
     tokens: &'a [Token],
@@ -86,6 +89,12 @@ impl<'a> TokenStack<'a> {
         Ok(())
     }
 
+    pub fn consume_reserved2(&mut self, reserved: ReservedWord) -> Result<(), InvalidSyntax> {
+        self.scan_reserved2(reserved)?;
+        self.next();
+        Ok(())
+    }
+
     pub fn scan_reserved(&self, reserved: ReservedWord) -> Result<(), ParseError> {
         let unexpected_token = "Unexpected token";
         let unexpected_eof = "unexpected eof";
@@ -102,6 +111,39 @@ impl<'a> TokenStack<'a> {
             }
         } else {
             Err(ParseError::new(unexpected_eof))
+        }
+    }
+
+    pub fn scan_reserved2(&self, reserved: ReservedWord) -> Result<(), InvalidSyntax> {
+        if let Some(next) = self.nth(1) {
+            match next.get_token() {
+                Some(TokenBase::Reserved(r)) => {
+                    if r != &reserved {
+                        Err(InvalidSyntax::new(
+                            next.get_token_position(),
+                            InvalidSyntaxType::ExpectedNext(ExpectedActuallyTokenPair(
+                                vec![TokenBase::Reserved(reserved)],
+                                next,
+                            )),
+                        ))
+                    } else {
+                        Ok(())
+                    }
+                }
+                _ => Err(InvalidSyntax::new(
+                    next.get_token_position(),
+                    InvalidSyntaxType::ExpectedNext(ExpectedActuallyTokenPair(
+                        vec![TokenBase::Reserved(reserved)],
+                        next,
+                    )),
+                )),
+            }
+        } else {
+            let tk = self.peek_token().unwrap();
+            Err(InvalidSyntax::new(
+                tk.get_token_position(),
+                InvalidSyntaxType::UnexpectedEof,
+            ))
         }
     }
 }
@@ -155,11 +197,11 @@ mod tests {
         ];
 
         let mut token_stack = TokenStack::new(&tokens);
-        token_stack.scan_reserved(ReservedWord::Arrow).unwrap();
+        token_stack.scan_reserved2(ReservedWord::Arrow).unwrap();
         token_stack.next();
-        token_stack.scan_reserved(ReservedWord::Comma).unwrap();
+        token_stack.scan_reserved2(ReservedWord::Comma).unwrap();
         token_stack.next();
-        if token_stack.scan_reserved(ReservedWord::Arrow).is_ok() {
+        if token_stack.scan_reserved2(ReservedWord::Arrow).is_ok() {
             panic!()
         }
     }
@@ -173,9 +215,9 @@ mod tests {
         ];
 
         let mut token_stack = TokenStack::new(&tokens);
-        token_stack.consume_reserved(ReservedWord::Arrow).unwrap();
-        token_stack.consume_reserved(ReservedWord::Comma).unwrap();
-        if token_stack.consume_reserved(ReservedWord::Arrow).is_ok() {
+        token_stack.consume_reserved2(ReservedWord::Arrow).unwrap();
+        token_stack.consume_reserved2(ReservedWord::Comma).unwrap();
+        if token_stack.consume_reserved2(ReservedWord::Arrow).is_ok() {
             panic!()
         }
     }

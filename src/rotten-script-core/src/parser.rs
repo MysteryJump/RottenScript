@@ -44,6 +44,24 @@ pub struct Parser<'a> {
     parse_error: ParseError2,
 }
 
+trait InvalidSyntaxResultHandler {
+    fn handle_scan(self, perror: &mut ParseError2);
+    fn handle_consume(self, parser: &mut Parser);
+}
+
+impl InvalidSyntaxResultHandler for Result<(), InvalidSyntax> {
+    fn handle_scan(self, perror: &mut ParseError2) {
+        self.unwrap_or_else(|e| perror.add_error(e));
+    }
+
+    fn handle_consume(self, parser: &mut Parser) {
+        self.unwrap_or_else(|e| {
+            parser.parse_error.add_error(e);
+            parser.tokens.next();
+        })
+    }
+}
+
 impl<'a> Parser<'a> {
     pub fn new(tokens: &'a mut TokenStack<'a>) -> Parser<'a> {
         Parser {
@@ -150,7 +168,15 @@ impl<'a> Parser<'a> {
                         match tk {
                             ReservedWord::Default => {
                                 ast.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
-                                self.tokens.scan_reserved(ReservedWord::Const)?;
+                                // self.tokens.scan_reserved(ReservedWord::Const)?;
+                                // // check needs
+                                // self.tokens
+                                //     .scan_reserved2(ReservedWord::Const)
+                                //     .unwrap_or_else(|e| self.parse_error.add_error(e));
+                                self.tokens
+                                    .scan_reserved2(ReservedWord::Const)
+                                    .handle_scan(&mut self.parse_error);
+                                // called2
                                 ast.push(self.parse_const_declaration()?);
                             }
                             ReservedWord::Const => {
@@ -246,7 +272,11 @@ impl<'a> Parser<'a> {
             // called
             return Err(ParseError::new("unexpected token or eof"));
         };
-        self.tokens.consume_reserved(ReservedWord::Assign)?;
+        // self.tokens.consume_reserved(ReservedWord::Assign)?;
+        self.tokens
+            .consume_reserved2(ReservedWord::Assign)
+            .handle_consume(self);
+        // called2
         let expr_ast = self.parse_expression()?;
         if let Some(TokenBase::Reserved(ReservedWord::SemiColon)) = self.tokens.look_ahead(1) {
             self.tokens.next();
@@ -313,8 +343,12 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_args(&mut self) -> Result<Ast, ParseError> {
+        // self.tokens
+        //     .consume_reserved(ReservedWord::LeftParenthesis)?;
+        // called2
         self.tokens
-            .consume_reserved(ReservedWord::LeftParenthesis)?;
+            .consume_reserved2(ReservedWord::LeftParenthesis)
+            .handle_consume(self);
         let mut callers = Vec::new();
 
         if self.tokens.look_ahead(1) == Some(TokenBase::Reserved(ReservedWord::RightParenthesis)) {
@@ -383,11 +417,23 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_function_expression(&mut self) -> Result<Ast, ParseError> {
+        // self.tokens
+        //     .consume_reserved(ReservedWord::LeftParenthesis)?;
         self.tokens
-            .consume_reserved(ReservedWord::LeftParenthesis)?;
+            .consume_reserved2(ReservedWord::LeftParenthesis)
+            .handle_consume(self);
+        // called2
+        // self.tokens
+        //     .consume_reserved(ReservedWord::RightParenthesis)?;
         self.tokens
-            .consume_reserved(ReservedWord::RightParenthesis)?;
-        self.tokens.consume_reserved(ReservedWord::Arrow)?;
+            .consume_reserved2(ReservedWord::LeftParenthesis)
+            .handle_consume(self);
+        // called2
+        // self.tokens.consume_reserved(ReservedWord::Arrow)?;
+        self.tokens
+            .consume_reserved2(ReservedWord::Arrow)
+            .handle_consume(self);
+        // called2
         Ok(Ast::new_node_with_leaves(
             NonTerminal::FunctionExpression,
             vec![self.parse_compound_expression()?],
@@ -396,7 +442,11 @@ impl<'a> Parser<'a> {
 
     fn parse_compound_expression(&mut self) -> Result<Ast, ParseError> {
         let mut expressions = Vec::new();
-        self.tokens.consume_reserved(ReservedWord::LeftCurly)?;
+        // self.tokens.consume_reserved(ReservedWord::LeftCurly)?;
+        self.tokens
+            .consume_reserved2(ReservedWord::LeftCurly)
+            .handle_consume(self);
+        // called2
         while let Some(tk) = self.tokens.look_ahead(1) {
             let exp = match tk {
                 TokenBase::String(_) | TokenBase::Number(_) | TokenBase::Identifier(_) => {
@@ -445,7 +495,11 @@ impl<'a> Parser<'a> {
                 return Err(ParseError::new("unexpected token"));
             }
         }
-        self.tokens.consume_reserved(ReservedWord::RightCurly)?;
+        // self.tokens.consume_reserved(ReservedWord::RightCurly)?;
+        self.tokens
+            .consume_reserved2(ReservedWord::RightCurly)
+            .handle_consume(self);
+        // called2
 
         Ok(Ast::new_node_with_leaves(
             NonTerminal::CompoundExpression,

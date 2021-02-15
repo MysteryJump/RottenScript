@@ -1,11 +1,18 @@
 use crate::lexer::{reserved_word::ReservedWord, token::TokenBase};
 
-use super::{ast::Ast, non_terminal::NonTerminal, parse_error::ParseError, Parser};
+use super::{
+    ast::Ast, non_terminal::NonTerminal, parse_error::ParseError, InvalidSyntaxResultHandler,
+    Parser,
+};
 
 impl<'a> Parser<'a> {
     fn parse_named_import_declaration(&mut self) -> Result<Ast, ParseError> {
         self.tokens.next();
-        self.tokens.consume_reserved(ReservedWord::LeftCurly)?;
+        // self.tokens.consume_reserved(ReservedWord::LeftCurly)?;
+        self.tokens
+            .consume_reserved2(ReservedWord::LeftCurly)
+            .handle_consume(self);
+        // called2
         let mut asts = Vec::new();
         loop {
             if let Some(s) = self.tokens.look_ahead(1) {
@@ -58,7 +65,11 @@ impl<'a> Parser<'a> {
                 return Err(ParseError::new("unexpected eof"));
             }
         }
-        self.tokens.consume_reserved(ReservedWord::From)?;
+        self.tokens
+            .consume_reserved2(ReservedWord::From)
+            .handle_consume(self);
+        // self.tokens.consume_reserved(ReservedWord::From)?;
+        // called2
         if let Some(TokenBase::String(_)) = self.tokens.look_ahead(1) {
             asts.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
             Ok(Ast::new_node_with_leaves(
@@ -91,7 +102,11 @@ impl<'a> Parser<'a> {
             // called
             return Err(ParseError::new("unexpected token or eof"));
         }
-        self.tokens.consume_reserved(ReservedWord::From)?;
+        self.tokens
+            .consume_reserved2(ReservedWord::From)
+            .handle_consume(self);
+        // called
+        // self.tokens.consume_reserved(ReservedWord::From)?;
         if let Some(TokenBase::String(_)) = self.tokens.look_ahead(1) {
             asts.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
             Ok(Ast::new_node_with_leaves(
@@ -146,7 +161,11 @@ impl<'a> Parser<'a> {
             // called
             Err(ParseError::new("unexpected eof"))
         };
-        self.tokens.consume_reserved(ReservedWord::SemiColon)?;
+        self.tokens
+            .consume_reserved2(ReservedWord::SemiColon)
+            .handle_consume(self);
+        // called
+        // self.tokens.consume_reserved(ReservedWord::SemiColon)?;
         result
     }
 }
