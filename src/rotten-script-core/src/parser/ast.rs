@@ -1,30 +1,34 @@
-use crate::lexer::token::TokenBase;
+use crate::lexer::token::Token;
 
 use super::{ast_type::AstType, non_terminal::NonTerminal};
 
 pub struct Ast {
     pub children: Option<Vec<Ast>>,
-    pub token: Option<TokenBase>,
+    pub token: Option<Token>,
     pub ast_type: AstType,
     invalid_ast: bool,
+    invalid_root_ast: bool,
 }
 
 impl Ast {
-    pub fn new_leaf(token: TokenBase) -> Ast {
+    pub fn new_leaf(token: Token) -> Ast {
         Ast {
             children: None,
             token: Some(token),
             ast_type: AstType::Terminal,
             invalid_ast: false,
+            invalid_root_ast: false,
         }
     }
 
     pub fn new_node_with_leaves(node_type: NonTerminal, children: Vec<Ast>) -> Ast {
+        let has_invalid_ast = children.iter().any(|x| x.invalid_ast);
         Ast {
             children: Some(children),
             token: None,
             ast_type: AstType::NonTerminal(node_type),
-            invalid_ast: false,
+            invalid_ast: has_invalid_ast,
+            invalid_root_ast: false,
         }
     }
 
@@ -48,6 +52,7 @@ impl Ast {
 
     pub fn set_invalid(&mut self) {
         self.invalid_ast = true;
+        self.invalid_root_ast = true;
     }
 
     pub fn unparse(&self) -> String {

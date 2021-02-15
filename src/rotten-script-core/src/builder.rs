@@ -167,7 +167,7 @@ impl Builder<'_> {
                 _ => {}
             }
         } else {
-            match ast.token.as_ref().unwrap() {
+            match ast.token.as_ref().unwrap().get_token().as_ref().unwrap() {
                 TokenBase::String(s) => {
                     self.result.push_str(&format!("\"{}\"", s));
                 }

@@ -143,3 +143,23 @@ impl PartialEq<Token> for TokenBase {
         }
     }
 }
+
+impl TokenBase {
+    pub fn default_string() -> TokenBase {
+        TokenBase::String(String::new())
+    }
+    pub fn default_number() -> TokenBase {
+        TokenBase::Number(String::new())
+    }
+    pub fn default_identifier() -> TokenBase {
+        TokenBase::Identifier(String::new())
+    }
+    pub fn get_literal_token_bases() -> [TokenBase; 4] {
+        [
+            TokenBase::default_string(),
+            TokenBase::default_number(),
+            TokenBase::Reserved(ReservedWord::True),
+            TokenBase::Reserved(ReservedWord::False),
+        ]
+    }
+}

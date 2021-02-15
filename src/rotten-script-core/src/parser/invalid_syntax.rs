@@ -2,7 +2,10 @@ use std::fmt::Display;
 
 use colored::Colorize;
 
-use crate::lexer::token::{TokenBase, TokenPosition};
+use crate::lexer::{
+    reserved_word::ReservedWord,
+    token::{Token, TokenBase, TokenPosition},
+};
 
 #[derive(Debug)]
 pub struct InvalidSyntax {
@@ -13,10 +16,11 @@ pub struct InvalidSyntax {
 #[derive(Debug)]
 pub enum InvalidSyntaxType {
     ExpectedNext(ExpectedActuallyTokenPair),
+    UnexpectedEof,
 }
 
 #[derive(Debug)]
-pub struct ExpectedActuallyTokenPair(Vec<TokenBase>, TokenBase);
+pub struct ExpectedActuallyTokenPair(pub Vec<TokenBase>, pub Token);
 
 impl InvalidSyntax {
     pub fn new(position: TokenPosition, invalid_syntax_type: InvalidSyntaxType) -> Self {
@@ -52,17 +56,22 @@ impl Display for InvalidSyntaxType {
                     pair.1
                 )
             }
+            InvalidSyntaxType::UnexpectedEof => {
+                write!(f, "unexpected EOF")
+            }
         }
     }
 }
 
 fn token_base_array_to_string(arr: &[TokenBase]) -> String {
     arr.iter()
-        .map(|x| x.to_string())
-        .map(|mut x| {
-            x.insert(0, '`');
-            x.push('`');
-            x
+        .map(|x| match x {
+            TokenBase::String(_)
+            | TokenBase::Number(_)
+            | TokenBase::Reserved(ReservedWord::True)
+            | TokenBase::Reserved(ReservedWord::False) => "literal".to_string(),
+            TokenBase::Reserved(r) => format!("`{}`", r),
+            TokenBase::Identifier(_) => "identifier".to_string(),
         })
         .collect::<Vec<_>>()
         .join(",")
