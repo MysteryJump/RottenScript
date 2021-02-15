@@ -146,6 +146,10 @@ impl<'a> TokenStack<'a> {
             ))
         }
     }
+
+    pub fn skip_reserved_until(&mut self, _reserved: ReservedWord) -> Result<(), InvalidSyntax> {
+        todo!()
+    }
 }
 
 #[cfg(test)]

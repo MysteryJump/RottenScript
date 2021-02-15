@@ -23,21 +23,6 @@ pub mod token_stack;
 
 mod import_parser;
 
-// struct OptionTokenBase(Option<TokenBase>);
-// struct OptionToken(Option<Token>);
-
-// impl PartialEq<OptionTokenBase> for OptionToken {
-//     fn eq(&self, other: &OptionTokenBase) -> bool {
-//         self.eq(other)
-//     }
-// }
-
-// impl PartialEq<OptionToken> for OptionTokenBase {
-//     fn eq(&self, other: &OptionToken) -> bool {
-//         self.eq(other)
-//     }
-// }
-
 pub struct Parser<'a> {
     pub tokens: &'a mut TokenStack<'a>,
     pub ast: Ast,
@@ -82,120 +67,94 @@ impl<'a> Parser<'a> {
             self.ast.add_child(import);
         }
         while self.tokens.has_next() {
-            if let Some(TokenBase::Reserved(r)) = self.tokens.look_ahead(1) {
-                let child = match r {
-                    ReservedWord::LeftSquareBracket => {
-                        while Some(TokenBase::Reserved(ReservedWord::LeftSquareBracket))
-                            == self.tokens.look_ahead(1)
-                        {
-                            let child = self.parse_attribute()?;
-                            self.ast.add_child(child);
-                        }
-                        if Some(TokenBase::Reserved(ReservedWord::Const))
-                            == self.tokens.look_ahead(1)
-                        {
-                            self.parse_exportable_const_declaration()?
-                        } else {
-                            self.handle_expected_actually_error(
-                                self.tokens.nth(1),
-                                vec![TokenBase::Reserved(ReservedWord::Const)],
-                                self.tokens.peek_token().unwrap(),
-                            );
-                            // called
-                            return Err(ParseError::new("unexpected eof or token"));
-                        }
+            let c = match self.tokens.look_ahead(1) {
+                Some(TokenBase::Reserved(ReservedWord::LeftSquareBracket)) => {
+                    while Some(TokenBase::Reserved(ReservedWord::LeftSquareBracket))
+                        == self.tokens.look_ahead(1)
+                    {
+                        let child = self.parse_attribute()?;
+                        self.ast.add_child(child);
                     }
-                    ReservedWord::Const | ReservedWord::Export => {
+                    if Some(TokenBase::Reserved(ReservedWord::Const)) == self.tokens.look_ahead(1) {
                         self.parse_exportable_const_declaration()?
-                    }
-                    _ => {
+                    } else {
+                        let target_token = self.tokens.nth(1);
                         self.handle_expected_actually_error(
-                            self.tokens.nth(1),
-                            vec![
-                                TokenBase::Reserved(ReservedWord::LeftSquareBracket),
-                                TokenBase::Reserved(ReservedWord::Const),
-                                TokenBase::Reserved(ReservedWord::Export),
-                            ],
+                            target_token.clone(),
+                            vec![TokenBase::Reserved(ReservedWord::Const)],
                             self.tokens.peek_token().unwrap(),
                         );
-                        // called
-                        return Err(ParseError::new("unexpected token"));
+                        Ast::new_leaf(target_token.unwrap())
                     }
-                };
-                self.ast.add_child(child);
-            } else {
-                self.handle_unexpected_eof_error(self.tokens.peek_token().unwrap());
-                // called
-                return Err(ParseError::new("unexpected eof"));
-            }
+                }
+                Some(TokenBase::Reserved(ReservedWord::Const))
+                | Some(TokenBase::Reserved(ReservedWord::Export)) => {
+                    self.parse_exportable_const_declaration()?
+                }
+                Some(_) | None => {
+                    let target = self.tokens.nth(1);
+                    self.handle_expected_actually_error(
+                        self.tokens.nth(1),
+                        vec![
+                            TokenBase::Reserved(ReservedWord::LeftSquareBracket),
+                            TokenBase::Reserved(ReservedWord::Const),
+                            TokenBase::Reserved(ReservedWord::Export),
+                        ],
+                        self.tokens.peek_token().unwrap(),
+                    );
+                    Ast::new_leaf(target.unwrap())
+                }
+            };
+            self.ast.add_child(c);
         }
 
         Ok(())
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn parse_attribute(&mut self) -> Result<Ast, ParseError> {
         self.tokens.next();
-        let ast;
-        if let Some(TokenBase::Identifier(_)) = self.tokens.look_ahead(1) {
-            let attr_token = self.tokens.next_token().unwrap();
-            if self.tokens.next().is_none() {
-                self.handle_unexpected_eof_error(self.tokens.peek_token().unwrap());
-                // called
-                return Err(ParseError::new("unexpected eof"));
+        let ast2 = match self.tokens.look_ahead(1) {
+            Some(TokenBase::Identifier(_)) => {
+                let attr_token = self.tokens.next_token().unwrap();
+                self.tokens
+                    .consume_reserved2(ReservedWord::RightSquareBracket)
+                    .handle_consume(self);
+                Ast::new_node_with_leaves(NonTerminal::Attribute, vec![Ast::new_leaf(attr_token)])
             }
-            ast =
-                Ast::new_node_with_leaves(NonTerminal::Attribute, vec![Ast::new_leaf(attr_token)]);
-        } else {
-            self.handle_expected_actually_error(
-                self.tokens.nth(1),
-                vec![TokenBase::default_identifier()],
-                self.tokens.peek_token().unwrap(),
-            );
-            // called
-            return Err(ParseError::new("unexpected token or eof"));
-        }
-        Ok(ast)
+            None | Some(_) => {
+                let target_token = self.tokens.nth(1);
+                self.handle_expected_actually_error(
+                    target_token.clone(),
+                    vec![TokenBase::default_identifier()],
+                    self.tokens.peek_token().unwrap(),
+                );
+                Ast::new_leaf(target_token.unwrap())
+            }
+        };
+
+        Ok(ast2)
     }
 
     // ExportableConstDeclaration = [ "export" , ["default"] ] , ConstDeclaration;
     fn parse_exportable_const_declaration(&mut self) -> Result<Ast, ParseError> {
         let mut ast = Vec::new();
+
         match self.tokens.look_ahead(1) {
-            Some(TokenBase::Reserved(r)) => match r {
-                ReservedWord::Export => {
-                    ast.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
-                    if let Some(TokenBase::Reserved(tk)) = self.tokens.look_ahead(1) {
-                        match tk {
-                            ReservedWord::Default => {
-                                ast.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
-                                // self.tokens.scan_reserved(ReservedWord::Const)?;
-                                // // check needs
-                                // self.tokens
-                                //     .scan_reserved2(ReservedWord::Const)
-                                //     .unwrap_or_else(|e| self.parse_error.add_error(e));
-                                self.tokens
-                                    .scan_reserved2(ReservedWord::Const)
-                                    .handle_scan(&mut self.parse_error);
-                                // called2
-                                ast.push(self.parse_const_declaration()?);
-                            }
-                            ReservedWord::Const => {
-                                ast.push(self.parse_const_declaration()?);
-                            }
-                            _ => {
-                                self.handle_expected_actually_error(
-                                    self.tokens.nth(1),
-                                    vec![
-                                        TokenBase::Reserved(ReservedWord::Default),
-                                        TokenBase::Reserved(ReservedWord::Const),
-                                    ],
-                                    self.tokens.peek_token().unwrap(),
-                                );
-                                // called
-                                return Err(ParseError::new("unexpected token"));
-                            }
-                        }
-                    } else {
+            Some(TokenBase::Reserved(ReservedWord::Export)) => {
+                ast.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
+                match self.tokens.look_ahead(1) {
+                    Some(TokenBase::Reserved(ReservedWord::Default)) => {
+                        ast.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
+                        self.tokens
+                            .scan_reserved2(ReservedWord::Const)
+                            .handle_scan(&mut self.parse_error);
+                        ast.push(self.parse_const_declaration()?);
+                    }
+                    Some(TokenBase::Reserved(ReservedWord::Const)) => {
+                        ast.push(self.parse_const_declaration()?);
+                    }
+                    Some(_) | None => {
                         self.handle_expected_actually_error(
                             self.tokens.nth(1),
                             vec![
@@ -204,37 +163,22 @@ impl<'a> Parser<'a> {
                             ],
                             self.tokens.peek_token().unwrap(),
                         );
-                        // called
-                        return Err(ParseError::new("unexpected eof or token"));
                     }
                 }
-                ReservedWord::Const => {
-                    ast.push(self.parse_const_declaration()?);
-                }
-                _ => {
-                    self.handle_expected_actually_error(
-                        self.tokens.nth(1),
-                        vec![
-                            TokenBase::Reserved(ReservedWord::Const),
-                            TokenBase::Reserved(ReservedWord::Export),
-                        ],
-                        self.tokens.peek_token().unwrap(),
-                    );
-                    // called
-                    return Err(ParseError::new("unexpected token"));
-                }
-            },
+            }
+            Some(TokenBase::Reserved(ReservedWord::Const)) => {
+                ast.push(self.parse_const_declaration()?);
+            }
             Some(_) | None => {
+                let target_token = self.tokens.nth(1);
                 self.handle_expected_actually_error(
-                    self.tokens.nth(1),
+                    target_token,
                     vec![
                         TokenBase::Reserved(ReservedWord::Const),
                         TokenBase::Reserved(ReservedWord::Export),
                     ],
                     self.tokens.peek_token().unwrap(),
                 );
-                // called
-                return Err(ParseError::new("unexpected eof or token"));
             }
         }
         Ok(Ast::new_node_with_leaves(
@@ -264,35 +208,31 @@ impl<'a> Parser<'a> {
         let ident_ast = if let Some(TokenBase::Identifier(_)) = self.tokens.look_ahead(1) {
             Ast::new_leaf(self.tokens.next_token().unwrap())
         } else {
+            let target_token = self.tokens.nth(1);
             self.handle_expected_actually_error(
-                self.tokens.nth(1),
+                target_token.clone(),
                 vec![TokenBase::default_identifier()],
                 self.tokens.peek_token().unwrap(),
             );
-            // called
-            return Err(ParseError::new("unexpected token or eof"));
+            Ast::new_leaf(target_token.unwrap())
         };
-        // self.tokens.consume_reserved(ReservedWord::Assign)?;
         self.tokens
             .consume_reserved2(ReservedWord::Assign)
             .handle_consume(self);
-        // called2
         let expr_ast = self.parse_expression()?;
         if let Some(TokenBase::Reserved(ReservedWord::SemiColon)) = self.tokens.look_ahead(1) {
             self.tokens.next();
-            Ok(Ast::new_node_with_leaves(
-                NonTerminal::DeclarationBody,
-                vec![ident_ast, expr_ast],
-            ))
         } else {
             self.handle_expected_actually_error(
                 self.tokens.nth(1),
                 vec![TokenBase::Reserved(ReservedWord::SemiColon)],
                 self.tokens.peek_token().unwrap(),
             );
-            // called
-            Err(ParseError::new("unexpected token or eof"))
         }
+        Ok(Ast::new_node_with_leaves(
+            NonTerminal::DeclarationBody,
+            vec![ident_ast, expr_ast],
+        ))
     }
 
     fn parse_expression(&mut self) -> Result<Ast, ParseError> {
@@ -326,11 +266,9 @@ impl<'a> Parser<'a> {
                 let tk = self.tokens.next_token();
                 self.handle_expected_actually_error(
                     tk,
-                    vec![TokenBase::Identifier("".to_string())],
+                    vec![TokenBase::default_identifier()],
                     ne.unwrap(),
                 );
-                // called
-                return Err(ParseError::new("unexpected token or eof"));
             }
         }
 
@@ -343,9 +281,6 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_args(&mut self) -> Result<Ast, ParseError> {
-        // self.tokens
-        //     .consume_reserved(ReservedWord::LeftParenthesis)?;
-        // called2
         self.tokens
             .consume_reserved2(ReservedWord::LeftParenthesis)
             .handle_consume(self);
@@ -356,39 +291,21 @@ impl<'a> Parser<'a> {
             Ok(Ast::new_node_with_leaves(NonTerminal::Args, Vec::new()))
         } else {
             loop {
-                if let Some(tk) = self.tokens.look_ahead(1) {
-                    match tk {
-                        TokenBase::String(_)
-                        | TokenBase::Number(_)
-                        | TokenBase::Identifier(_)
-                        | TokenBase::Reserved(ReservedWord::LeftParenthesis) => {
-                            callers.push(self.parse_expression()?);
-                        }
-                        _ => {
-                            self.handle_expected_actually_error(
-                                self.tokens.nth(1),
-                                vec![
-                                    TokenBase::String("".to_string()),
-                                    TokenBase::Number("".to_string()),
-                                    TokenBase::Identifier("".to_string()),
-                                    TokenBase::Reserved(ReservedWord::LeftParenthesis),
-                                ],
-                                self.tokens.peek_token().unwrap(),
-                            );
-                            // called
-                            return Err(ParseError::new("unexpected token"));
-                        }
-                    }
-                    if let Some(tk) = self.tokens.look_ahead(1) {
-                        match tk {
-                            TokenBase::Reserved(ReservedWord::Comma) => {
+                match self.tokens.look_ahead(1) {
+                    Some(TokenBase::String(_))
+                    | Some(TokenBase::Number(_))
+                    | Some(TokenBase::Identifier(_))
+                    | Some(TokenBase::Reserved(ReservedWord::LeftParenthesis)) => {
+                        callers.push(self.parse_expression()?);
+                        match self.tokens.look_ahead(1) {
+                            Some(TokenBase::Reserved(ReservedWord::Comma)) => {
                                 self.tokens.next();
                             }
-                            TokenBase::Reserved(ReservedWord::RightParenthesis) => {
+                            Some(TokenBase::Reserved(ReservedWord::RightParenthesis)) => {
                                 self.tokens.next();
                                 break;
                             }
-                            _ => {
+                            Some(_) | None => {
                                 self.handle_expected_actually_error(
                                     self.tokens.nth(1),
                                     vec![
@@ -397,19 +314,19 @@ impl<'a> Parser<'a> {
                                     ],
                                     self.tokens.peek_token().unwrap(),
                                 );
-                                // called
-                                return Err(ParseError::new("unexpected token"));
                             }
                         }
-                    } else {
-                        self.handle_unexpected_eof_error(self.tokens.peek_token().unwrap());
-                        // called
-                        return Err(ParseError::new("unexpected eof"));
-                    };
-                } else {
-                    self.handle_unexpected_eof_error(self.tokens.peek_token().unwrap());
-                    // called
-                    return Err(ParseError::new("unexpected eof"));
+                    }
+                    Some(_) | None => {
+                        self.handle_expected_actually_error(
+                            self.tokens.nth(1),
+                            vec![
+                                TokenBase::Reserved(ReservedWord::Comma),
+                                TokenBase::Reserved(ReservedWord::RightParenthesis),
+                            ],
+                            self.tokens.peek_token().unwrap(),
+                        );
+                    }
                 }
             }
             Ok(Ast::new_node_with_leaves(NonTerminal::Args, callers))
@@ -417,23 +334,15 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_function_expression(&mut self) -> Result<Ast, ParseError> {
-        // self.tokens
-        //     .consume_reserved(ReservedWord::LeftParenthesis)?;
         self.tokens
             .consume_reserved2(ReservedWord::LeftParenthesis)
             .handle_consume(self);
-        // called2
-        // self.tokens
-        //     .consume_reserved(ReservedWord::RightParenthesis)?;
         self.tokens
             .consume_reserved2(ReservedWord::LeftParenthesis)
             .handle_consume(self);
-        // called2
-        // self.tokens.consume_reserved(ReservedWord::Arrow)?;
         self.tokens
             .consume_reserved2(ReservedWord::Arrow)
             .handle_consume(self);
-        // called2
         Ok(Ast::new_node_with_leaves(
             NonTerminal::FunctionExpression,
             vec![self.parse_compound_expression()?],
@@ -442,11 +351,9 @@ impl<'a> Parser<'a> {
 
     fn parse_compound_expression(&mut self) -> Result<Ast, ParseError> {
         let mut expressions = Vec::new();
-        // self.tokens.consume_reserved(ReservedWord::LeftCurly)?;
         self.tokens
             .consume_reserved2(ReservedWord::LeftCurly)
             .handle_consume(self);
-        // called2
         while let Some(tk) = self.tokens.look_ahead(1) {
             let exp = match tk {
                 TokenBase::String(_) | TokenBase::Number(_) | TokenBase::Identifier(_) => {
@@ -454,8 +361,9 @@ impl<'a> Parser<'a> {
                 }
                 TokenBase::Reserved(ReservedWord::LeftParenthesis) => self.parse_expression()?,
                 _ => {
+                    let target_token = self.tokens.nth(1);
                     self.handle_expected_actually_error(
-                        self.tokens.nth(1),
+                        target_token.clone(),
                         vec![
                             TokenBase::default_string(),
                             TokenBase::default_number(),
@@ -464,8 +372,7 @@ impl<'a> Parser<'a> {
                         ],
                         self.tokens.peek_token().unwrap(),
                     );
-                    // called
-                    return Err(ParseError::new("unexpected token"));
+                    Ast::new_leaf(target_token.unwrap())
                 }
             };
 
@@ -491,15 +398,11 @@ impl<'a> Parser<'a> {
                     vec![TokenBase::Reserved(ReservedWord::SemiColon)],
                     self.tokens.peek_token().unwrap(),
                 );
-                // called
-                return Err(ParseError::new("unexpected token"));
             }
         }
-        // self.tokens.consume_reserved(ReservedWord::RightCurly)?;
         self.tokens
             .consume_reserved2(ReservedWord::RightCurly)
             .handle_consume(self);
-        // called2
 
         Ok(Ast::new_node_with_leaves(
             NonTerminal::CompoundExpression,

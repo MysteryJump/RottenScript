@@ -6,88 +6,76 @@ use super::{
 };
 
 impl<'a> Parser<'a> {
+    #[allow(clippy::unnecessary_wraps)]
     fn parse_named_import_declaration(&mut self) -> Result<Ast, ParseError> {
         self.tokens.next();
-        // self.tokens.consume_reserved(ReservedWord::LeftCurly)?;
         self.tokens
             .consume_reserved2(ReservedWord::LeftCurly)
             .handle_consume(self);
-        // called2
         let mut asts = Vec::new();
+
         loop {
-            if let Some(s) = self.tokens.look_ahead(1) {
-                match s {
-                    TokenBase::Identifier(_) => {
-                        let next_token = self.tokens.next_token().unwrap();
-                        asts.push(Ast::new_leaf(next_token));
-                        match self.tokens.look_ahead(1) {
-                            Some(TokenBase::Reserved(r))
-                                if r == ReservedWord::Comma || r == ReservedWord::RightCurly =>
-                            {
-                                match r {
-                                    ReservedWord::Comma => {
-                                        self.tokens.next();
-                                    }
-                                    ReservedWord::RightCurly => {
-                                        self.tokens.next();
-                                        break;
-                                    }
-                                    _ => panic!(),
+            match self.tokens.look_ahead(1) {
+                Some(TokenBase::Identifier(_)) => {
+                    let next_token = self.tokens.next_token().unwrap();
+                    asts.push(Ast::new_leaf(next_token));
+                    match self.tokens.look_ahead(1) {
+                        Some(TokenBase::Reserved(r))
+                            if r == ReservedWord::Comma || r == ReservedWord::RightCurly =>
+                        {
+                            match r {
+                                ReservedWord::Comma => {
+                                    self.tokens.next();
                                 }
-                            }
-                            Some(_) | None => {
-                                self.handle_expected_actually_error(
-                                    self.tokens.nth(1),
-                                    vec![
-                                        TokenBase::Reserved(ReservedWord::Comma),
-                                        TokenBase::Reserved(ReservedWord::RightCurly),
-                                    ],
-                                    self.tokens.peek_token().unwrap(),
-                                );
-                                // called
-                                return Err(ParseError::new("unexpected eof or token"));
+                                ReservedWord::RightCurly => {
+                                    self.tokens.next();
+                                    break;
+                                }
+                                _ => panic!(),
                             }
                         }
-                    }
-                    _ => {
-                        self.handle_expected_actually_error(
-                            self.tokens.nth(1),
-                            vec![TokenBase::default_identifier()],
-                            self.tokens.peek_token().unwrap(),
-                        );
-                        // called
-                        return Err(ParseError::new("unexpected token"));
+                        Some(_) | None => {
+                            self.handle_expected_actually_error(
+                                self.tokens.nth(1),
+                                vec![
+                                    TokenBase::Reserved(ReservedWord::Comma),
+                                    TokenBase::Reserved(ReservedWord::RightCurly),
+                                ],
+                                self.tokens.peek_token().unwrap(),
+                            );
+                        }
                     }
                 }
-            } else {
-                self.handle_unexpected_eof_error(self.tokens.peek_token().unwrap());
-                // called
-                return Err(ParseError::new("unexpected eof"));
+                Some(_) | None => {
+                    self.handle_expected_actually_error(
+                        self.tokens.nth(1),
+                        vec![TokenBase::default_identifier()],
+                        self.tokens.peek_token().unwrap(),
+                    );
+                }
             }
         }
         self.tokens
             .consume_reserved2(ReservedWord::From)
             .handle_consume(self);
-        // self.tokens.consume_reserved(ReservedWord::From)?;
-        // called2
+
         if let Some(TokenBase::String(_)) = self.tokens.look_ahead(1) {
             asts.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
-            Ok(Ast::new_node_with_leaves(
-                NonTerminal::NamedImportDeclaration,
-                asts,
-            ))
         } else {
             self.handle_expected_actually_error(
                 self.tokens.nth(1),
                 vec![TokenBase::default_string()],
                 self.tokens.peek_token().unwrap(),
             );
-            // called
-            Err(ParseError::new("unexpected token or eof"))
         }
+        Ok(Ast::new_node_with_leaves(
+            NonTerminal::NamedImportDeclaration,
+            asts,
+        ))
     }
 
     // DefaultImportDeclaration = "import" , Identifier , "from" , (DoubleQuotesString | SingleQuotesString);
+    #[allow(clippy::unnecessary_wraps)]
     fn parse_default_import_declaration(&mut self) -> Result<Ast, ParseError> {
         self.tokens.next();
         let mut asts = Vec::new();
@@ -99,74 +87,53 @@ impl<'a> Parser<'a> {
                 vec![TokenBase::default_identifier()],
                 self.tokens.peek_token().unwrap(),
             );
-            // called
-            return Err(ParseError::new("unexpected token or eof"));
         }
         self.tokens
             .consume_reserved2(ReservedWord::From)
             .handle_consume(self);
-        // called
-        // self.tokens.consume_reserved(ReservedWord::From)?;
+
         if let Some(TokenBase::String(_)) = self.tokens.look_ahead(1) {
             asts.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
-            Ok(Ast::new_node_with_leaves(
-                NonTerminal::DefaultImportDeclaration,
-                asts,
-            ))
         } else {
             self.handle_expected_actually_error(
                 self.tokens.nth(1),
                 vec![TokenBase::default_string()],
                 self.tokens.peek_token().unwrap(),
             );
-            // called
-            Err(ParseError::new("unexpected token or eof"))
         }
+        Ok(Ast::new_node_with_leaves(
+            NonTerminal::DefaultImportDeclaration,
+            asts,
+        ))
     }
 
     // ImportDeclaration = (NamedImportDeclaration | DefaultImportDeclaration) , ";";
     pub fn parse_import_declaration(&mut self) -> Result<Ast, ParseError> {
-        let result = if let Some(next) = self.tokens.look_ahead(2) {
-            match next {
-                TokenBase::Reserved(ReservedWord::LeftCurly) => Ok(Ast::new_node_with_leaves(
-                    NonTerminal::ImportDeclaration,
-                    vec![self.parse_named_import_declaration()?],
-                )),
-                TokenBase::Identifier(_) => Ok(Ast::new_node_with_leaves(
-                    NonTerminal::ImportDeclaration,
-                    vec![self.parse_default_import_declaration()?],
-                )),
-                _ => {
-                    self.handle_expected_actually_error(
-                        self.tokens.nth(2),
-                        vec![
-                            TokenBase::Reserved(ReservedWord::LeftCurly),
-                            TokenBase::default_identifier(),
-                        ],
-                        self.tokens.nth(1).unwrap(),
-                    );
-                    // called
-                    return Err(ParseError::new("unexpected token"));
-                }
+        let result = match self.tokens.look_ahead(2) {
+            Some(TokenBase::Reserved(ReservedWord::LeftCurly)) => Ast::new_node_with_leaves(
+                NonTerminal::ImportDeclaration,
+                vec![self.parse_named_import_declaration()?],
+            ),
+            Some(TokenBase::Identifier(_)) => Ast::new_node_with_leaves(
+                NonTerminal::ImportDeclaration,
+                vec![self.parse_default_import_declaration()?],
+            ),
+            Some(_) | None => {
+                self.handle_expected_actually_error(
+                    self.tokens.nth(2),
+                    vec![
+                        TokenBase::Reserved(ReservedWord::LeftCurly),
+                        TokenBase::default_identifier(),
+                    ],
+                    self.tokens.nth(1).unwrap(),
+                );
+                Ast::new_leaf(self.tokens.next_token().unwrap())
             }
-        } else {
-            self.handle_expected_actually_error(
-                self.tokens.nth(2),
-                vec![
-                    TokenBase::Reserved(ReservedWord::LeftCurly),
-                    TokenBase::default_identifier(),
-                ],
-                self.tokens.nth(1).unwrap(),
-            );
-            // called
-            Err(ParseError::new("unexpected eof"))
         };
         self.tokens
             .consume_reserved2(ReservedWord::SemiColon)
             .handle_consume(self);
-        // called
-        // self.tokens.consume_reserved(ReservedWord::SemiColon)?;
-        result
+        Ok(result)
     }
 }
 
@@ -230,13 +197,6 @@ mod tests {
 
     #[test]
     fn parse_import_declaration_test() {}
-
-    fn count_without_reserved_token(tokens: &[crate::lexer::token::Token]) -> usize {
-        tokens
-            .iter()
-            .filter(|x| !matches!(x.get_token().as_ref().unwrap(), Reserved(_)))
-            .count()
-    }
 
     fn count_without_reserved_token_base(tokens: &[crate::lexer::token::TokenBase]) -> usize {
         tokens.iter().filter(|x| !matches!(x, Reserved(_))).count()
