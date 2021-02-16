@@ -56,8 +56,13 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(&mut self) -> Result<(), ParseError> {
-        self.parse_translation_unit()
+    pub fn parse(&mut self) -> Result<(), &ParseError2> {
+        self.parse_translation_unit().unwrap();
+        if self.parse_error.has_error() {
+            Err(&self.parse_error)
+        } else {
+            Ok(())
+        }
     }
 
     // TranslationUnit = { ImportDeclaration } , { { Attribute } , ExportableConstDeclaration };
@@ -326,6 +331,7 @@ impl<'a> Parser<'a> {
                             ],
                             self.tokens.peek_token().unwrap(),
                         );
+                        break;
                     }
                 }
             }
@@ -338,7 +344,7 @@ impl<'a> Parser<'a> {
             .consume_reserved2(ReservedWord::LeftParenthesis)
             .handle_consume(self);
         self.tokens
-            .consume_reserved2(ReservedWord::LeftParenthesis)
+            .consume_reserved2(ReservedWord::RightParenthesis)
             .handle_consume(self);
         self.tokens
             .consume_reserved2(ReservedWord::Arrow)

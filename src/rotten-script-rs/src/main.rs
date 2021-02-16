@@ -24,18 +24,36 @@ fn main() {
         .map(|x| (x.to_string(), fs::read_to_string(x).unwrap()))
         .collect::<Vec<_>>();
 
+    let mut has_error = false;
+    // TODO: Replace for stmt
     let ast_pairs = content_file_pair
         .iter()
         .map(|x| {
             let mut lexer = Lexer::new(&x.1, &x.0);
-            lexer.lex().unwrap();
-            println!("{:?}", lexer.tokens);
+            let lexer_result = lexer.lex();
+            match lexer_result {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("{}", e);
+                    has_error = true;
+                }
+            }
+            // println!("{:?}", lexer.tokens);
             let token_stack = &mut TokenStack::new(&lexer.tokens);
             let mut parser = Parser::new(token_stack);
-            parser.parse().unwrap();
+            match parser.parse() {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("{}", e);
+                    has_error = true;
+                }
+            }
             (x.0.clone(), parser.ast)
         })
         .collect::<Vec<_>>();
+    if has_error {
+        return;
+    }
 
     let project = analyze(ast_pairs.iter().map(|x| (x.0.clone(), &x.1)).collect());
     let result = project.call_builder(true);

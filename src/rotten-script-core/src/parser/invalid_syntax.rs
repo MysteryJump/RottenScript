@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::HashSet, fmt::Display};
 
 use colored::Colorize;
 
@@ -28,6 +28,9 @@ impl InvalidSyntax {
             position,
             invalid_syntax_type,
         }
+    }
+    pub fn get_type(&self) -> &InvalidSyntaxType {
+        &self.invalid_syntax_type
     }
 }
 
@@ -73,6 +76,8 @@ fn token_base_array_to_string(arr: &[TokenBase]) -> String {
             TokenBase::Reserved(r) => format!("`{}`", r),
             TokenBase::Identifier(_) => "identifier".to_string(),
         })
+        .collect::<HashSet<_>>()
+        .into_iter()
         .collect::<Vec<_>>()
-        .join(",")
+        .join(", ")
 }

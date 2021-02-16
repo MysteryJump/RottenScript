@@ -5,6 +5,7 @@ import {
   eject_sourcecode,
 } from "../../pkg/rotten_script_wasm";
 import fs from "fs";
+import { exit } from "process";
 
 const helpText = "Usage: npm start -- [filename|dirName] [-d]";
 
@@ -33,7 +34,10 @@ if (args.length < 3) {
       const text = fs.readFileSync(item, "utf-8");
       add_file(item, text);
     }
-    execute_processing();
+    const result = execute_processing();
+    if (!result) {
+      exit(-1);
+    }
     if (fs.existsSync(`${args[2]}/dist`)) {
       fs.rmSync(`${args[2]}/dist`, { recursive: true });
     }

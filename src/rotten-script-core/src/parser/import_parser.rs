@@ -52,6 +52,7 @@ impl<'a> Parser<'a> {
                         vec![TokenBase::default_identifier()],
                         self.tokens.peek_token().unwrap(),
                     );
+                    break;
                 }
             }
         }
