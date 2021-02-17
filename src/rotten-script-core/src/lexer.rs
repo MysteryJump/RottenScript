@@ -54,7 +54,7 @@ impl<'a> Lexer<'a> {
 
     pub fn lex(&mut self) -> Result<(), LexError> {
         let reserved_regex = Regex::new(
-            r"^(=[>]?|\(|\)|\{|\}|\[|\]|\.|,|;|const|let|import|export|from|default|true|false)",
+            r"^(={1,2}[>]?|\(|\)|\{|\}|\[|\]|\.|,|;|\+=?|\*{1,2}=?|/=?|-=?|%=?|<<?=?|>{1,3}=?|&&|&=?|\|\||\|=?|\^=?|\~|!=?|const|let|import|export|from|default|true|false)",
         )
         .unwrap();
         let identifier_regex = Regex::new(r"^([_a-zA-Z][_a-zA-Z0-9]*)").unwrap();
@@ -85,13 +85,14 @@ impl<'a> Lexer<'a> {
                 }
 
                 replace_length = 1;
+            } else if code.starts_with("//") {
+                line_com_mode = true;
+                replace_length = 2;
+                self.col += replace_length as u32;
             } else if let Some(number) = number_literal_regex.find(&code) {
                 let mat = number.as_str();
 
-                {
-                    self.push_token(TokenBase::Number(mat.to_string()));
-                }
-
+                self.push_token(TokenBase::Number(mat.to_string()));
                 replace_length = mat.len();
                 self.col += replace_length as u32;
             } else if let Some(reserveds) = reserved_regex.find(&code) {
@@ -109,6 +110,18 @@ impl<'a> Lexer<'a> {
                     "." => ReservedWord::Period,
                     "," => ReservedWord::Comma,
                     ";" => ReservedWord::SemiColon,
+                    "+" => ReservedWord::Add,
+                    "*" => ReservedWord::Mult,
+                    "/" => ReservedWord::Div,
+                    "-" => ReservedWord::Sub,
+                    "%" => ReservedWord::Mod,
+                    "<" => ReservedWord::Less,
+                    ">" => ReservedWord::Greater,
+                    "&" => ReservedWord::And,
+                    "|" => ReservedWord::Or,
+                    "^" => ReservedWord::Xor,
+                    "~" => ReservedWord::Not,
+                    "!" => ReservedWord::LogicalNot,
                     "const" => ReservedWord::Const,
                     "let" => ReservedWord::Let,
                     "import" => ReservedWord::Import,
@@ -117,6 +130,28 @@ impl<'a> Lexer<'a> {
                     "default" => ReservedWord::Default,
                     "true" => ReservedWord::True,
                     "false" => ReservedWord::False,
+                    "<<" => ReservedWord::LeftShift,
+                    ">>" => ReservedWord::RightShift,
+                    ">>>" => ReservedWord::UnsignedRightShift,
+                    "<=" => ReservedWord::LessOrEq,
+                    ">=" => ReservedWord::GreaterOrEq,
+                    "==" => ReservedWord::Equal,
+                    "!=" => ReservedWord::NotEqual,
+                    "**" => ReservedWord::Exponential,
+                    "&&" => ReservedWord::LogicalAnd,
+                    "||" => ReservedWord::LogicalOr,
+                    "+=" => ReservedWord::AdditiveAssign,
+                    "-=" => ReservedWord::SubtractiveAssign,
+                    "*=" => ReservedWord::MultiplicativeAssign,
+                    "/=" => ReservedWord::DivisiveAssign,
+                    "%=" => ReservedWord::ModuloAssign,
+                    "<<=" => ReservedWord::LeftShiftAssign,
+                    ">>=" => ReservedWord::RightShiftAssign,
+                    ">>>=" => ReservedWord::UnsignedRightShiftAssign,
+                    "&=" => ReservedWord::AndAssign,
+                    "^=" => ReservedWord::XorAssign,
+                    "|=" => ReservedWord::OrAssign,
+                    "**=" => ReservedWord::ExponentialAssign,
                     _ => panic!(),
                 };
                 // self.tokens.push(TokenBase::Reserved(word));
@@ -131,10 +166,6 @@ impl<'a> Lexer<'a> {
                 self.push_token(TokenBase::Identifier(mat.to_string()));
 
                 replace_length = mat.len();
-                self.col += replace_length as u32;
-            } else if code.starts_with("//") {
-                line_com_mode = true;
-                replace_length = 2;
                 self.col += replace_length as u32;
             } else if let Some(dq_str) = dq_str_literal_regex.find(&code) {
                 let mat = dq_str.as_str().trim_matches('"');
@@ -363,14 +394,18 @@ mod tests {
     fn test_reserved() {
         let cases = vec![
             "=", "(", ")", "{", "}", "[", "]", ".", ",", ";", "=>", "const", "let", "import",
-            "export", "default", "from", "true", "false",
+            "export", "default", "from", "true", "false", "+", "*", "/", "-", "%", "<", ">", "&",
+            "|", "^", "~", "!", "<<", ">>", ">>>", "<=", ">=", "==", "!=", "**", "&&", "||", "+=",
+            "-=", "*=", "/=", "%=", "<<=", ">>=", ">>>=", "&=", "^=", "|=", "**=",
         ];
         use super::ReservedWord::*;
         use super::TokenBase::Reserved;
         for (ind, case) in cases.iter().enumerate() {
             let mut lexer = Lexer::new(case, "");
             lexer.lex().unwrap();
+
             assert_eq!(1, lexer.tokens.len());
+
             let first = lexer.tokens[0].get_token().as_ref().unwrap().clone();
             match ind {
                 0 => assert_eq!(Reserved(Assign), first),
@@ -392,6 +427,42 @@ mod tests {
                 16 => assert_eq!(Reserved(From), first),
                 17 => assert_eq!(Reserved(True), first),
                 18 => assert_eq!(Reserved(False), first),
+                19 => assert_eq!(Reserved(Add), first),
+                20 => assert_eq!(Reserved(Mult), first),
+                21 => assert_eq!(Reserved(Div), first),
+                22 => assert_eq!(Reserved(Sub), first),
+                23 => assert_eq!(Reserved(Mod), first),
+                24 => assert_eq!(Reserved(Less), first),
+                25 => assert_eq!(Reserved(Greater), first),
+                26 => assert_eq!(Reserved(And), first),
+                27 => assert_eq!(Reserved(Or), first),
+                28 => assert_eq!(Reserved(Xor), first),
+                29 => assert_eq!(Reserved(Not), first),
+                30 => assert_eq!(Reserved(LogicalNot), first),
+                31 => assert_eq!(Reserved(LeftShift), first),
+                32 => assert_eq!(Reserved(RightShift), first),
+                33 => assert_eq!(Reserved(UnsignedRightShift), first),
+                34 => assert_eq!(Reserved(LessOrEq), first),
+                35 => assert_eq!(Reserved(GreaterOrEq), first),
+                36 => assert_eq!(Reserved(Equal), first),
+                37 => assert_eq!(Reserved(NotEqual), first),
+                38 => assert_eq!(Reserved(Exponential), first),
+                39 => assert_eq!(Reserved(LogicalAnd), first),
+                40 => assert_eq!(Reserved(LogicalOr), first),
+                41 => assert_eq!(Reserved(AdditiveAssign), first),
+                42 => assert_eq!(Reserved(SubtractiveAssign), first),
+                43 => assert_eq!(Reserved(MultiplicativeAssign), first),
+                44 => assert_eq!(Reserved(DivisiveAssign), first),
+                45 => assert_eq!(Reserved(ModuloAssign), first),
+                46 => assert_eq!(Reserved(LeftShiftAssign), first),
+                47 => assert_eq!(Reserved(RightShiftAssign), first),
+                48 => assert_eq!(Reserved(UnsignedRightShiftAssign), first),
+                49 => assert_eq!(Reserved(AndAssign), first),
+                50 => assert_eq!(Reserved(XorAssign), first),
+                51 => assert_eq!(Reserved(OrAssign), first),
+                52 => assert_eq!(Reserved(ExponentialAssign), first),
+                // 53 => assert_eq!(Reserved(LeftShiftAssign), first),
+                // 54 => assert_eq!(Reserved(LeftShiftAssign), first),
                 _ => panic!(),
             }
         }
