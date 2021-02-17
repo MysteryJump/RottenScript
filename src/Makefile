@@ -3,3 +3,6 @@ sample:
 
 init:
 	cd rotten-script-wasm/node-project && npm ci
+
+clean:
+	cargo clean && cd rotten-script-wasm && rm -r pkg && cd node-project/sample && rm -r dist

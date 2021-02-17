@@ -21,6 +21,7 @@ pub(crate) mod non_terminal;
 mod parse_error;
 pub mod token_stack;
 
+mod expression_parser;
 mod import_parser;
 
 pub struct Parser<'a> {
@@ -43,7 +44,7 @@ impl InvalidSyntaxResultHandler for Result<(), InvalidSyntax> {
         self.unwrap_or_else(|e| {
             parser.parse_error.add_error(e);
             parser.tokens.next();
-        })
+        });
     }
 }
 
@@ -200,7 +201,6 @@ impl<'a> Parser<'a> {
         ))
     }
 
-    #[allow(dead_code)]
     fn parse_let_declaration(&mut self) -> Result<Ast, ParseError> {
         self.tokens.next();
         Ok(Ast::new_node_with_leaves(
@@ -237,51 +237,6 @@ impl<'a> Parser<'a> {
         Ok(Ast::new_node_with_leaves(
             NonTerminal::DeclarationBody,
             vec![ident_ast, expr_ast],
-        ))
-    }
-
-    fn parse_expression(&mut self) -> Result<Ast, ParseError> {
-        Ok(Ast::new_node_with_leaves(
-            NonTerminal::Expression,
-            vec![match self.tokens.look_ahead(1).unwrap() {
-                TokenBase::Identifier(_) => self.parse_call_expression()?,
-                TokenBase::String(_)
-                | TokenBase::Number(_)
-                | TokenBase::Reserved(ReservedWord::True)
-                | TokenBase::Reserved(ReservedWord::False) => {
-                    Ast::new_leaf(self.tokens.next_token().unwrap())
-                }
-                TokenBase::Reserved(ReservedWord::LeftParenthesis) => {
-                    // NOTE: after read all of item of inner parentheses, if there is =>, it is arrow expression
-                    self.parse_function_expression()?
-                }
-                _ => panic!(),
-            }],
-        ))
-    }
-
-    fn parse_call_expression(&mut self) -> Result<Ast, ParseError> {
-        let mut idents = vec![Ast::new_leaf(self.tokens.next_token().unwrap())];
-
-        while let Some(TokenBase::Reserved(ReservedWord::Period)) = self.tokens.look_ahead(1) {
-            let ne = self.tokens.next_token();
-            if let Some(TokenBase::Identifier(_)) = self.tokens.look_ahead(1) {
-                idents.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
-            } else {
-                let tk = self.tokens.next_token();
-                self.handle_expected_actually_error(
-                    tk,
-                    vec![TokenBase::default_identifier()],
-                    ne.unwrap(),
-                );
-            }
-        }
-
-        let args = self.parse_args()?;
-        idents.push(args);
-        Ok(Ast::new_node_with_leaves(
-            NonTerminal::CallExpression,
-            idents,
         ))
     }
 
@@ -361,11 +316,44 @@ impl<'a> Parser<'a> {
             .consume_reserved2(ReservedWord::LeftCurly)
             .handle_consume(self);
         while let Some(tk) = self.tokens.look_ahead(1) {
-            let exp = match tk {
-                TokenBase::String(_) | TokenBase::Number(_) | TokenBase::Identifier(_) => {
-                    self.parse_expression()?
+            match tk {
+                TokenBase::String(_)
+                | TokenBase::Number(_)
+                | TokenBase::Identifier(_)
+                | TokenBase::Reserved(ReservedWord::LeftParenthesis) => {
+                    let exp = self.parse_expression()?;
+                    let has_semicolon = if let Some(TokenBase::Reserved(ReservedWord::SemiColon)) =
+                        self.tokens.look_ahead(1)
+                    {
+                        self.tokens.next();
+                        expressions.push(Ast::new_node_with_leaves(
+                            NonTerminal::ExpressionStatement,
+                            vec![exp],
+                        ));
+                        true
+                    } else {
+                        expressions.push(exp);
+                        false
+                    };
+
+                    if let Some(TokenBase::Reserved(ReservedWord::RightCurly)) =
+                        self.tokens.look_ahead(1)
+                    {
+                        break;
+                    } else if !has_semicolon {
+                        self.handle_expected_actually_error(
+                            self.tokens.nth(1),
+                            vec![TokenBase::Reserved(ReservedWord::SemiColon)],
+                            self.tokens.peek_token().unwrap(),
+                        );
+                    }
                 }
-                TokenBase::Reserved(ReservedWord::LeftParenthesis) => self.parse_expression()?,
+                TokenBase::Reserved(ReservedWord::Const) => {
+                    expressions.push(self.parse_const_declaration()?)
+                }
+                TokenBase::Reserved(ReservedWord::Let) => {
+                    expressions.push(self.parse_let_declaration()?)
+                }
                 _ => {
                     let target_token = self.tokens.nth(1);
                     self.handle_expected_actually_error(
@@ -378,32 +366,8 @@ impl<'a> Parser<'a> {
                         ],
                         self.tokens.peek_token().unwrap(),
                     );
-                    Ast::new_leaf(target_token.unwrap())
+                    expressions.push(Ast::new_leaf(target_token.unwrap()))
                 }
-            };
-
-            let has_semicolon = if let Some(TokenBase::Reserved(ReservedWord::SemiColon)) =
-                self.tokens.look_ahead(1)
-            {
-                self.tokens.next();
-                expressions.push(Ast::new_node_with_leaves(
-                    NonTerminal::ExpressionStatement,
-                    vec![exp],
-                ));
-                true
-            } else {
-                expressions.push(exp);
-                false
-            };
-
-            if let Some(TokenBase::Reserved(ReservedWord::RightCurly)) = self.tokens.look_ahead(1) {
-                break;
-            } else if !has_semicolon {
-                self.handle_expected_actually_error(
-                    self.tokens.nth(1),
-                    vec![TokenBase::Reserved(ReservedWord::SemiColon)],
-                    self.tokens.peek_token().unwrap(),
-                );
             }
         }
         self.tokens
