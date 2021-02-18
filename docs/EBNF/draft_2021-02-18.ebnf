@@ -1,4 +1,4 @@
-(* Draft v0.0.1-20210216, revised 2021/02/17 *)
+(* Draft v0.0.1-20210218 *)
 TranslationUnit = { ImportDeclaration } , { { Attribute } , ExportableConstDeclaration };
 Attribute = "[" , Identifier , "]";
 ExportableConstDeclaration = [ "export" , ["default"] ] , ConstDeclaration;
@@ -15,7 +15,9 @@ FunctionExpression = "(" , ")" , "=>" , CompoundExpression;
 ExpressionStatement = Expression , ";";
 CompoundExpression = "{" , { (ExpressionStatement | ConstDeclaration | LetDeclaration) } , [ Expression ] , "}";
 
-PrimaryExpression = Literal | Identifier | CallExpression | FunctionExpression | ParenthesizedExpression;
+PrimaryExpression = 
+    (Literal | Identifier | FunctionExpression | ParenthesizedExpression | CompoundExpression),
+    { { ".", Identifier }, { Args } };
 ParenthesizedExpression = "(" , Expression , ")";
 UnaryExpression = 
     PrimaryExpression
@@ -35,7 +37,7 @@ BitwiseORExpression = BitwiseXORExpression, { "|", BitwiseXORExpression };
 LogicalANDExpression = BitwiseORExpression, { "&&", BitwiseORExpression };
 LogicalORExpression = LogicalANDExpression, { "||", LogicalANDExpression };
 
-AssignmentStatement = Identifier , { "." Identifier } , AssignmentOperator, Expression;
+(* AssignmentStatement = Identifier , { "." Identifier } , AssignmentOperator, Expression; *)
 
 NamedImportDeclaration = "import" , "{" , Identifier , { "," , Identifier } , "}" , "from" (DoubleQuotesString | SingleQuotesString);
 DefaultImportDeclaration = "import" , Identifier , "from" , (DoubleQuotesString | SingleQuotesString);
