@@ -9,3 +9,4 @@ license = "MIT"
 
 [dependencies]
 rotten-script-core = { path = "../rotten-script-core" }
+rayon = "1"

@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum NonTerminal {
     TranslationUnit,
     Attribute,
@@ -26,7 +26,7 @@ pub enum NonTerminal {
     EqualityExpression,
     BitwiseAndExpression,
     BitwiseXorExpression,
-    BitwiseOrexpression,
+    BitwiseOrExpression,
     LogicalAndExpression,
     LogicalOrExpression,
 }
