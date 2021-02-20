@@ -17,6 +17,7 @@ pub struct InvalidSyntax {
 pub enum InvalidSyntaxType {
     ExpectedNext(ExpectedActuallyTokenPair),
     UnexpectedEof,
+    ExponentialError(),
 }
 
 #[derive(Debug)]
@@ -61,6 +62,10 @@ impl Display for InvalidSyntaxType {
             }
             InvalidSyntaxType::UnexpectedEof => {
                 write!(f, "unexpected EOF")
+            }
+            InvalidSyntaxType::ExponentialError() => {
+                write!(f, "cannot allow exponential operator (**) after the unary operated expression (e.g. +1 ** 2), 
+                you need to use parenthesized unary operator (e.g. (+1) ** 2)")
             }
         }
     }

@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum NonTerminal {
     TranslationUnit,
     Attribute,
@@ -15,4 +15,18 @@ pub enum NonTerminal {
     NamedImportDeclaration,
     DefaultImportDeclaration,
     ImportDeclaration,
+    PrimaryExpression,
+    ParenthesizedExpression,
+    UnaryExpression,
+    ExponentiationExpression,
+    MultiplicativeExpression,
+    AdditiveExpression,
+    ShiftExpression,
+    RelationalExpression,
+    EqualityExpression,
+    BitwiseAndExpression,
+    BitwiseXorExpression,
+    BitwiseOrExpression,
+    LogicalAndExpression,
+    LogicalOrExpression,
 }

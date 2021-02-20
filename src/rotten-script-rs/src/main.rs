@@ -48,6 +48,7 @@ fn main() {
                     has_error = true;
                 }
             }
+            println!("{}", parser.ast.unparse());
             (x.0.clone(), parser.ast)
         })
         .collect::<Vec<_>>();

@@ -10,7 +10,7 @@ impl<'a> Parser<'a> {
     fn parse_named_import_declaration(&mut self) -> Result<Ast, ParseError> {
         self.tokens.next();
         self.tokens
-            .consume_reserved2(ReservedWord::LeftCurly)
+            .consume_reserved(ReservedWord::LeftCurly)
             .handle_consume(self);
         let mut asts = Vec::new();
 
@@ -57,7 +57,7 @@ impl<'a> Parser<'a> {
             }
         }
         self.tokens
-            .consume_reserved2(ReservedWord::From)
+            .consume_reserved(ReservedWord::From)
             .handle_consume(self);
 
         if let Some(TokenBase::String(_)) = self.tokens.look_ahead(1) {
@@ -90,7 +90,7 @@ impl<'a> Parser<'a> {
             );
         }
         self.tokens
-            .consume_reserved2(ReservedWord::From)
+            .consume_reserved(ReservedWord::From)
             .handle_consume(self);
 
         if let Some(TokenBase::String(_)) = self.tokens.look_ahead(1) {
@@ -132,7 +132,7 @@ impl<'a> Parser<'a> {
             }
         };
         self.tokens
-            .consume_reserved2(ReservedWord::SemiColon)
+            .consume_reserved(ReservedWord::SemiColon)
             .handle_consume(self);
         Ok(result)
     }
