@@ -3,8 +3,7 @@ import { ConsoleLog } from "./sample2/sample2";
 
 [EntryPoint] // Build-in attribute for program entry point
 const main = (): number => {
-    console.log("Hello, world!");
-    
+    console.log("Hello, world!");    
     const b = (2 + 3 ^ 7) / 4;
     let a: number = (3 * 4 + b) ** 2;
     a = 3 + 2 + ConsoleLog();
@@ -12,6 +11,7 @@ const main = (): number => {
         let e = 3;
         5 + 7;
     };
+
     ConsoleLog();
     console.log(a + b);
 };
