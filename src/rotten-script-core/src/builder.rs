@@ -70,27 +70,61 @@ impl Builder<'_> {
                     let children = ast.children.as_ref().unwrap();
                     self.unparse_rec(&children[0], depth);
                     self.result.push_str(" = ");
-                    self.unparse_rec(&children[1], depth);
+                    self.unparse_rec(
+                        if children.len() == 2 {
+                            &children[1]
+                        } else {
+                            &children[2]
+                        },
+                        depth,
+                    );
                     self.result.push(';');
                     self.add_lf_with_depth_space(depth);
                 }
                 NonTerminal::Expression => {
                     self.unparse_rec(&ast.children.as_ref().unwrap()[0], depth);
                 }
-                NonTerminal::CallExpression => {
-                    let children = ast.children.as_ref().unwrap();
-                    let len = children.len();
-                    for (i, child) in children.iter().take(len - 1).enumerate() {
-                        if i != 0 {
-                            self.result.push('.');
-                        }
-                        self.unparse_rec(child, depth);
+                NonTerminal::PrimaryExpression => {
+                    let v = ast.children.as_ref().unwrap();
+                    self.unparse_rec(&v[0], depth);
+                    for item in v.iter().skip(1) {
+                        self.unparse_rec(item, depth)
                     }
-                    self.unparse_rec(&children[len - 1], depth);
+                }
+                NonTerminal::AdditiveExpression
+                | NonTerminal::MultiplicativeExpression
+                | NonTerminal::ShiftExpression
+                | NonTerminal::RelationalExpression
+                | NonTerminal::EqualityExpression
+                | NonTerminal::BitwiseAndExpression
+                | NonTerminal::BitwiseOrExpression
+                | NonTerminal::LogicalAndExpression
+                | NonTerminal::BitwiseXorExpression
+                | NonTerminal::LogicalOrExpression => {
+                    let children = ast.children.as_ref().unwrap();
+                    for item in children {
+                        self.unparse_rec(item, depth);
+                    }
+                }
+                NonTerminal::ParenthesizedExpression => {
+                    self.result.push('(');
+                    self.unparse_rec(&ast.children.as_ref().unwrap()[0], depth);
+                    self.result.push(')');
+                }
+                NonTerminal::ExponentiationExpression => {
+                    let children = ast.children.as_ref().unwrap();
+                    if children.len() == 1 {
+                        self.unparse_rec(&children[0], depth);
+                    } else {
+                        self.unparse_rec(&children[0], depth);
+                        self.result.push_str("**");
+                        self.unparse_rec(&children[1], depth);
+                    }
                 }
                 NonTerminal::FunctionExpression => {
                     self.result.push_str("() => ");
-                    self.unparse_rec(&ast.children.as_ref().unwrap()[0], depth);
+                    let children = ast.children.as_ref().unwrap();
+                    self.unparse_rec(&children[if children.len() == 1 { 0 } else { 1 }], depth);
                 }
                 NonTerminal::CompoundExpression => {
                     self.result.push('{');
@@ -163,6 +197,19 @@ impl Builder<'_> {
                     }
                     self.result.push_str(" } from ");
                     self.unparse_rec(&ast.children.as_ref().unwrap()[len - 1], depth);
+                }
+                NonTerminal::AssignmentStatement => {
+                    let children = ast.children.as_ref().unwrap();
+                    let ident_count = children.len() - 2;
+                    for item in children[0..ident_count - 1].iter() {
+                        self.unparse_rec(item, depth);
+                        self.result.push('.');
+                    }
+                    self.unparse_rec(&children[ident_count - 1], depth);
+                    self.unparse_rec(&children[ident_count], depth);
+                    self.unparse_rec(&children[ident_count + 1], depth);
+                    self.result.push(';');
+                    self.add_lf_with_depth_space(depth);
                 }
                 _ => {}
             }

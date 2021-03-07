@@ -24,6 +24,7 @@ pub enum ReservedWord {
     Xor = '^' as isize,
     Not = '~' as isize,
     LogicalNot = '!' as isize,
+    Colon = ':' as isize,
     Arrow = 1000,
     Const,
     Let,
@@ -161,6 +162,7 @@ mod tests {
             From,
             True,
             False,
+            Colon,
         ];
         for item in reserveds {
             match item {
@@ -217,6 +219,7 @@ mod tests {
                 LogicalAnd => assert_eq!("&&", item.to_string()),
                 LogicalNot => assert_eq!("!", item.to_string()),
                 LogicalOr => assert_eq!("||", item.to_string()),
+                Colon => assert_eq!(":", item.to_string()),
             }
         }
     }

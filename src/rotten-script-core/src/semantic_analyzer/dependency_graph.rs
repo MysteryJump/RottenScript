@@ -1,5 +1,8 @@
+use daggy::Dag;
+
 pub struct DependencyGraph {
     graph: Vec<Node>,
+    dag: Dag<u32, u32, u32>,
 }
 
 struct FullPath(String);

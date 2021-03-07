@@ -7,7 +7,6 @@ pub enum NonTerminal {
     LetDeclaration,
     DeclarationBody,
     Expression,
-    CallExpression,
     FunctionExpression,
     CompoundExpression,
     Args,
@@ -29,4 +28,5 @@ pub enum NonTerminal {
     BitwiseOrExpression,
     LogicalAndExpression,
     LogicalOrExpression,
+    AssignmentStatement,
 }

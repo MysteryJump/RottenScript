@@ -120,6 +120,9 @@ macro_rules! TBR {
             crate::lexer::reserved_word::ReservedWord::LogicalNot,
         )
     };
+    (":") => {
+        crate::lexer::token::TokenBase::Reserved(crate::lexer::reserved_word::ReservedWord::Colon)
+    };
     ("=>") => {
         crate::lexer::token::TokenBase::Reserved(crate::lexer::reserved_word::ReservedWord::Arrow)
     };
@@ -446,6 +449,8 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_declaration_body(&mut self) -> Result<Ast, ParseError> {
+        let mut asts = Vec::new();
+
         let ident_ast = if let Some(TokenBase::Identifier(_)) = self.tokens.look_ahead(1) {
             Ast::new_leaf(self.tokens.next_token().unwrap())
         } else {
@@ -457,10 +462,31 @@ impl<'a> Parser<'a> {
             );
             Ast::new_leaf(target_token.unwrap())
         };
+
+        asts.push(ident_ast);
+
+        if self.tokens.look_ahead(1) == Some(TokenBase::Reserved(ReservedWord::Colon)) {
+            self.tokens.next();
+            let target_token = self.tokens.nth(1);
+            match self.tokens.look_ahead(1) {
+                Some(TokenBase::Identifier(_)) => {
+                    asts.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
+                }
+                _ => self.handle_expected_actually_error(
+                    target_token,
+                    vec![TokenBase::default_identifier()],
+                    self.tokens.peek_token().unwrap(),
+                ),
+            }
+        }
+
         self.tokens
             .consume_reserved(ReservedWord::Assign)
             .handle_consume(self);
-        let expr_ast = self.parse_expression2()?;
+
+        let expr_ast = self.parse_expression()?;
+        asts.push(expr_ast);
+
         if let Some(TokenBase::Reserved(ReservedWord::SemiColon)) = self.tokens.look_ahead(1) {
             self.tokens.next();
         } else {
@@ -470,9 +496,10 @@ impl<'a> Parser<'a> {
                 self.tokens.peek_token().unwrap(),
             );
         }
+
         Ok(Ast::new_node_with_leaves(
             NonTerminal::DeclarationBody,
-            vec![ident_ast, expr_ast],
+            asts,
         ))
     }
 
@@ -492,7 +519,7 @@ impl<'a> Parser<'a> {
                     | Some(TokenBase::Number(_))
                     | Some(TokenBase::Identifier(_))
                     | Some(TokenBase::Reserved(ReservedWord::LeftParenthesis)) => {
-                        callers.push(self.parse_expression2()?);
+                        callers.push(self.parse_expression()?);
                         match self.tokens.look_ahead(1) {
                             Some(TokenBase::Reserved(ReservedWord::Comma)) => {
                                 self.tokens.next();
@@ -528,6 +555,49 @@ impl<'a> Parser<'a> {
             }
             Ok(Ast::new_node_with_leaves(NonTerminal::Args, callers))
         }
+    }
+
+    fn parse_assignment_expression(&mut self) -> Result<Ast, ParseError> {
+        let mut astc = vec![Ast::new_leaf(self.tokens.next_token().unwrap())];
+        while self.tokens.look_ahead(1) == Some(TBR!(".")) {
+            self.tokens.next();
+            astc.push(Ast::new_leaf(self.tokens.next_token().unwrap()));
+        }
+        match self.tokens.look_ahead(1) {
+            Some(TBR!("=")) | Some(TBR!("*=")) | Some(TBR!("/=")) | Some(TBR!("%="))
+            | Some(TBR!("+=")) | Some(TBR!("-=")) | Some(TBR!("<<=")) | Some(TBR!(">>="))
+            | Some(TBR!(">>>=")) | Some(TBR!("&=")) | Some(TBR!("^=")) | Some(TBR!("|="))
+            | Some(TBR!("**=")) => astc.push(Ast::new_leaf(self.tokens.next_token().unwrap())),
+            _ => {
+                self.handle_expected_actually_error(
+                    self.tokens.nth(1),
+                    vec![
+                        TBR!("="),
+                        TBR!("*="),
+                        TBR!("/="),
+                        TBR!("%="),
+                        TBR!("+="),
+                        TBR!("-="),
+                        TBR!("<<="),
+                        TBR!(">>="),
+                        TBR!(">>>="),
+                        TBR!("&="),
+                        TBR!("^="),
+                        TBR!("|="),
+                        TBR!("**="),
+                    ],
+                    self.tokens.peek_token().unwrap(),
+                );
+            }
+        }
+        astc.push(self.parse_expression()?);
+        self.tokens
+            .consume_reserved(ReservedWord::SemiColon)
+            .handle_consume(self);
+        Ok(Ast::new_node_with_leaves(
+            NonTerminal::AssignmentStatement,
+            astc,
+        ))
     }
 
     fn handle_expected_actually_error(

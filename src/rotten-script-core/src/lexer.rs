@@ -54,7 +54,7 @@ impl<'a> Lexer<'a> {
 
     pub fn lex(&mut self) -> Result<(), LexError> {
         let reserved_regex = Regex::new(
-            r"^(={1,2}[>]?|\(|\)|\{|\}|\[|\]|\.|,|;|\+=?|\*{1,2}=?|/=?|-=?|%=?|<<?=?|>{1,3}=?|&&|&=?|\|\||\|=?|\^=?|\~|!=?|const|let|import|export|from|default|true|false)",
+            r"^(={1,2}[>]?|\(|\)|\{|\}|\[|\]|\.|,|:|;|\+=?|\*{1,2}=?|/=?|-=?|%=?|<<?=?|>{1,3}=?|&&|&=?|\|\||\|=?|\^=?|\~|!=?|const|let|import|export|from|default|true|false)",
         )
         .unwrap();
         let identifier_regex = Regex::new(r"^([_a-zA-Z][_a-zA-Z0-9]*)").unwrap();
@@ -122,6 +122,7 @@ impl<'a> Lexer<'a> {
                     "^" => ReservedWord::Xor,
                     "~" => ReservedWord::Not,
                     "!" => ReservedWord::LogicalNot,
+                    ":" => ReservedWord::Colon,
                     "const" => ReservedWord::Const,
                     "let" => ReservedWord::Let,
                     "import" => ReservedWord::Import,
@@ -396,7 +397,7 @@ mod tests {
             "=", "(", ")", "{", "}", "[", "]", ".", ",", ";", "=>", "const", "let", "import",
             "export", "default", "from", "true", "false", "+", "*", "/", "-", "%", "<", ">", "&",
             "|", "^", "~", "!", "<<", ">>", ">>>", "<=", ">=", "==", "!=", "**", "&&", "||", "+=",
-            "-=", "*=", "/=", "%=", "<<=", ">>=", ">>>=", "&=", "^=", "|=", "**=",
+            "-=", "*=", "/=", "%=", "<<=", ">>=", ">>>=", "&=", "^=", "|=", "**=", ":",
         ];
         use super::ReservedWord::*;
         use super::TokenBase::Reserved;
@@ -461,7 +462,7 @@ mod tests {
                 50 => assert_eq!(Reserved(XorAssign), first),
                 51 => assert_eq!(Reserved(OrAssign), first),
                 52 => assert_eq!(Reserved(ExponentialAssign), first),
-                // 53 => assert_eq!(Reserved(LeftShiftAssign), first),
+                53 => assert_eq!(Reserved(Colon), first),
                 // 54 => assert_eq!(Reserved(LeftShiftAssign), first),
                 _ => panic!(),
             }
