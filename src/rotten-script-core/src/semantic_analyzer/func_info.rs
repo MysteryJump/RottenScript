@@ -5,7 +5,7 @@ pub struct FuncInfo {
     pub file_name: String,
     exported_type: ExportedType,
     args: Arguments,
-    return_type: Type,
+    pub return_type: Type,
     // uuid is a good choice for func_id?
     pub func_id: u32,
     pub is_entry: bool,
@@ -19,6 +19,7 @@ impl FuncInfo {
         id: u32,
         attributes: Vec<String>,
         exported_type: ExportedType,
+        return_type: Type,
     ) -> FuncInfo {
         let is_entry = attributes.iter().any(|x| x == &String::from("EntryPoint"));
         FuncInfo {
@@ -29,7 +30,7 @@ impl FuncInfo {
             args: Arguments {
                 arguments: Vec::new(),
             },
-            return_type: Type::Primitive(PrimitiveType::Void),
+            return_type,
             func_id: id,
             is_entry,
             attributes,
@@ -48,13 +49,14 @@ pub enum ExportedType {
 struct Arguments {
     arguments: Vec<(String, Type)>,
 }
-#[derive(Debug)]
-enum Type {
+#[derive(Debug, Clone, Copy)]
+pub enum Type {
     Primitive(PrimitiveType),
     Object,
+    Unknown,
 }
-#[derive(Debug)]
-enum PrimitiveType {
+#[derive(Debug, Clone, Copy)]
+pub enum PrimitiveType {
     Number,
     String,
     Boolean,

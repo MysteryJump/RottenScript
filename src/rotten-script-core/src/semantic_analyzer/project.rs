@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use crate::parser::ast::Ast;
 
 use super::{
-    dependency_graph::DependencyGraph, file_map::FileMap, func_info::FuncInfo,
+    dependency_graph::DependencyGraph,
+    file_map::FileMap,
+    func_info::FuncInfo,
+    interface_info::{self, InterfaceInfo},
     member_map::MemberMap,
 };
 
@@ -14,6 +17,7 @@ pub struct Project<'a> {
     pub ast_list: Vec<(String, &'a Ast)>,
     entry_point_id: Option<u32>,
     func_id_count: u32,
+    #[allow(dead_code)]
     project_name: String,
 }
 
@@ -40,6 +44,8 @@ impl<'a> Project<'a> {
             self.file_maps.insert(map.path.clone(), map);
         }
         self.search_entry_point();
+        self.analyze_dependencies();
+        self.analyze_typing();
     }
 
     fn search_entry_point(&mut self) {
@@ -77,5 +83,48 @@ impl<'a> Project<'a> {
             }
         );
         println!("members: \n{:?}", self.member_map);
+    }
+
+    /// analyze project dependencies without defined members such as console.log
+    fn analyze_dependencies(&mut self) {
+        let _ = DependencyGraph::new();
+    }
+
+    fn analyze_typing(&mut self) {
+        todo!()
+    }
+
+    // for temporary, (path, (interface_name, InterfaceInfo))
+    #[allow(dead_code)]
+    fn get_defined_member_map(
+    ) -> HashMap<&'static str, HashMap<&'static str, interface_info::InterfaceInfo>> {
+        let mut map = HashMap::new();
+
+        map.insert("std", {
+            let mut map = HashMap::new();
+            let mut interface = InterfaceInfo::new(
+                "console".to_string(),
+                "std".to_string(),
+                1 << 20,
+                Vec::new(),
+                super::func_info::ExportedType::Export,
+            );
+            interface.add_member(
+                "log",
+                super::func_info::Type::Primitive(super::func_info::PrimitiveType::Void),
+            );
+            interface.add_member(
+                "error",
+                super::func_info::Type::Primitive(super::func_info::PrimitiveType::Void),
+            );
+            interface.add_member(
+                "warn",
+                super::func_info::Type::Primitive(super::func_info::PrimitiveType::Void),
+            );
+            map.insert("console", interface);
+            map
+        });
+
+        map
     }
 }

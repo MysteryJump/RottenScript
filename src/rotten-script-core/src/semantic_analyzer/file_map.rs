@@ -1,6 +1,9 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::parser::{ast::Ast, ast_type::AstType, non_terminal::NonTerminal};
+use crate::{
+    lexer::token::TokenBase,
+    parser::{ast::Ast, ast_type::AstType, non_terminal::NonTerminal},
+};
 
 use super::{
     func::Func,
@@ -103,6 +106,17 @@ impl<'a> FileMap<'a> {
                         if has_export {
                             exports.push(func_name.clone());
                         }
+                        let function_expr =
+                            Self::get_function_expr(declar_body).unwrap_or_else(|| {
+                                panic!("In the top-level statement, the only function object is allowed for now.")
+                            });
+
+                        let func_ret_type = Self::get_func_ret_type(function_expr)
+                            // TODO: replace to .unwrap_or(super::func_info::Type::Unknown)
+                            .unwrap_or(super::func_info::Type::Primitive(
+                                super::func_info::PrimitiveType::Void,
+                            ));
+
                         let func_info = FuncInfo::new(
                             func_name,
                             path.to_string(),
@@ -115,6 +129,7 @@ impl<'a> FileMap<'a> {
                             } else {
                                 ExportedType::None
                             },
+                            func_ret_type,
                         );
                         count += 1;
                         attributes.clear();
@@ -147,5 +162,49 @@ impl<'a> FileMap<'a> {
     fn extract_file_name_from_full_path(full_path: String) -> String {
         let ind = full_path.rfind(|x| x == '/' || x == '\\').unwrap();
         full_path[ind + 1..].to_string()
+    }
+
+    fn get_function_expr(declar_body: &Ast) -> Option<&Ast> {
+        if declar_body.children.as_ref()?.len() <= 1 {
+            return None;
+        }
+        let primary = &declar_body.children.as_ref().unwrap()[1];
+        if primary.ast_type != AstType::NonTerminal(NonTerminal::PrimaryExpression) {
+            return None;
+        }
+        let func_exp = &primary.children.as_ref()?[0];
+        if func_exp.ast_type == AstType::NonTerminal(NonTerminal::FunctionExpression) {
+            Some(func_exp)
+        } else {
+            None
+        }
+    }
+
+    fn get_func_ret_type(function_expr: &Ast) -> Option<super::func_info::Type> {
+        let children = function_expr.children.as_ref().unwrap();
+
+        let l = children.len() as isize - 2;
+        if l < 0 {
+            return None;
+        }
+        let elem_before_arrow = children.get(children.len() - 2)?;
+        if let TokenBase::Identifier(ty) = (elem_before_arrow.token.as_ref()?.get_token().as_ref())?
+        {
+            let ty = ty as &str;
+            Some(match ty {
+                "bool" => {
+                    super::func_info::Type::Primitive(super::func_info::PrimitiveType::Boolean)
+                }
+                "string" => {
+                    super::func_info::Type::Primitive(super::func_info::PrimitiveType::String)
+                }
+                "number" => {
+                    super::func_info::Type::Primitive(super::func_info::PrimitiveType::Number)
+                }
+                _ => super::func_info::Type::Object,
+            })
+        } else {
+            None
+        }
     }
 }

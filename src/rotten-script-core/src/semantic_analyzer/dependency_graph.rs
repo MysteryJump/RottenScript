@@ -1,5 +1,6 @@
 use daggy::Dag;
 
+#[derive(Default)]
 pub struct DependencyGraph {
     graph: Vec<Node>,
     dag: Dag<u32, u32, u32>,
@@ -16,6 +17,10 @@ impl DependencyGraph {
     }
     fn get(&self, id: i32) -> &Node {
         &self.graph[id as usize]
+    }
+
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 

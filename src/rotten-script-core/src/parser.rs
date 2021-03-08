@@ -37,6 +37,7 @@ pub mod token_stack;
 // }
 
 /// abbreviation for TokenBase::Reserved
+#[macro_export]
 macro_rules! TBR {
     ("=") => {
         crate::lexer::token::TokenBase::Reserved(crate::lexer::reserved_word::ReservedWord::Assign)

@@ -8,6 +8,7 @@ mod dependency_graph;
 mod file_map;
 mod func;
 pub(crate) mod func_info;
+mod interface_info;
 mod member_map;
 pub(crate) mod project;
 

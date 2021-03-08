@@ -7,10 +7,6 @@ const main = (): number => {
     const b = (2 + 3 ^ 7) / 4;
     let a: number = (3 * 4 + b) ** 2;
     a = 3 + 2 + ConsoleLog();
-    const d = () => {
-        let e = 3;
-        5 + 7;
-    };
 
     ConsoleLog();
     console.log(a + b);
