@@ -55,6 +55,20 @@ pub enum Type {
     Object,
     Unknown,
 }
+
+impl Into<Type> for String {
+    fn into(self) -> Type {
+        let s = &self as &str;
+        match s {
+            "number" => Type::Primitive(PrimitiveType::Number),
+            "string" => Type::Primitive(PrimitiveType::String),
+            "void" => Type::Primitive(PrimitiveType::Void),
+            "bool" => Type::Primitive(PrimitiveType::Boolean),
+            _ => Type::Object,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum PrimitiveType {
     Number,
