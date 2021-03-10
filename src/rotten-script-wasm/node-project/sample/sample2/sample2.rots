@@ -1,3 +1,5 @@
 export const ConsoleLog = () => {
+    // a = 4;
+    4 + 3;
     console.log("Hello, log!");
 };

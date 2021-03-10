@@ -135,7 +135,8 @@ impl<'a> FileMap<'a> {
                         attributes.clear();
 
                         let func_info_rc = Rc::new(func_info);
-                        let func = Func::new(declar_body, func_info_rc.clone());
+                        let mut func = Func::new(declar_body, func_info_rc.clone());
+                        func.analyze(HashMap::new(), HashMap::new()).unwrap();
 
                         map.insert(func_info_rc.name.clone(), func_info_rc.clone());
                         funcs.insert(func_info_rc.clone().name.clone(), Rc::new(func));
